@@ -3,6 +3,6 @@ workspace:
     yoga-protobuf:
       path: ../purescript-yoga-protobuf
     go-io:
-      path: ../purescript-go-ws/packages/go-io
+      path: ../purescript-go-ws-readable/packages/go-io
     yoga-go-http-om:
       path: ../yoga-go-http-om-ws-connect

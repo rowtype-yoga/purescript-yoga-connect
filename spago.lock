@@ -404,7 +404,7 @@
     },
     "extra_packages": {
       "go-io": {
-        "path": "../purescript-go-ws/packages/go-io"
+        "path": "../purescript-go-ws-readable/packages/go-io"
       },
       "yoga-go-http-om": {
         "path": "../yoga-go-http-om-ws-connect"
@@ -797,7 +797,7 @@
     },
     "go-io": {
       "type": "local",
-      "path": "../purescript-go-ws/packages/go-io",
+      "path": "../purescript-go-ws-readable/packages/go-io",
       "dependencies": [
         "aff",
         "arrays",
