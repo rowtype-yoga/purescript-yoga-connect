@@ -113,7 +113,8 @@ import Data.Traversable (for, for_, traverse)
 import Data.TraversableWithIndex (forWithIndex)
 import Data.Tuple.Nested (type (/\), (/\))
 import Go.IO (IO, finally, forkIO)
-import Go.IO.Chan (Chan, readChan)
+import Go.IO.Chan (Chan)
+import Go.IO.Select (onDone, onReceive, select2)
 import Go.IO.IORef (IORef, newIORef, readIORef, writeIORef)
 import Go.IO.MVar (MVar, newEmptyMVar, putMVar, readMVar)
 import Yoga.Go.HTTP.OmIO (OmIO, liftIO, runOmIO)
@@ -216,12 +217,19 @@ fromOm computation = Strom \_ -> do
       element <- computation
       pure (Emit [ element ])
 
--- | What is written to go-io's channel, without end. Waiting for the next value isn't
--- | interrupted; use `fromHandoff` for that.
+-- | What is sent on go-io's channel, until it's closed. Waiting for the next value stops when the
+-- | stream is interrupted.
 fromChan :: forall ctx err a. Chan a -> Strom ctx err a
-fromChan channel = Strom \_ -> pure do
-  element <- readChan channel # liftIO
-  pure (Emit [ element ])
+fromChan channel = Strom \scope -> pure do
+  received <- receiveOrClosed (contextOf scope) # liftIO
+  case received of
+    Nothing -> throwError interrupted
+    Just Nothing -> pure End
+    Just (Just element) -> pure (Emit [ element ])
+  where
+  receiveOrClosed context = select2
+    (onReceive channel (pure <<< Just))
+    (onDone context (pure Nothing))
 
 -- | What is offered to the handoff, without end. Waiting for the next value stops when the stream
 -- | is interrupted.
