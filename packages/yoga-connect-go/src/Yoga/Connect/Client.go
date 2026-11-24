@@ -47,25 +47,27 @@ func (c *connection) client(procedure string) *connect.Client[[]byte, []byte] {
 	return existing.(*connect.Client[[]byte, []byte])
 }
 
-func CallUnaryImpl[R any](failed func(int32) func(string) R, succeeded func([]byte) R, c *connection, procedure string, request []byte) R {
-	response, err := c.client(procedure).CallUnary(context.Background(), connect.NewRequest(&request))
+func CallUnaryImpl[R any](failed func(int32) func(string) R, succeeded func([]byte) R, ctx context.Context, c *connection, procedure string, request []byte) R {
+	response, err := c.client(procedure).CallUnary(ctx, connect.NewRequest(&request))
 	if err != nil {
 		return failure(failed, err)
 	}
 	return succeeded(*response.Msg)
 }
 
-func OpenServerStreamImpl(c *connection, procedure string, request []byte) *clientCall {
-	stream, err := c.client(procedure).CallServerStream(context.Background(), connect.NewRequest(&request))
+// OpenServerStreamImpl calls within the context: cancelling it cancels the call, and its
+// deadline is the call's.
+func OpenServerStreamImpl(ctx context.Context, c *connection, procedure string, request []byte) *clientCall {
+	stream, err := c.client(procedure).CallServerStream(ctx, connect.NewRequest(&request))
 	return &clientCall{serverStream: stream, failure: err}
 }
 
-func OpenClientStreamImpl(c *connection, procedure string) *clientCall {
-	return &clientCall{clientStream: c.client(procedure).CallClientStream(context.Background())}
+func OpenClientStreamImpl(ctx context.Context, c *connection, procedure string) *clientCall {
+	return &clientCall{clientStream: c.client(procedure).CallClientStream(ctx)}
 }
 
-func OpenBidiStreamImpl(c *connection, procedure string) *clientCall {
-	return &clientCall{bidiStream: c.client(procedure).CallBidiStream(context.Background())}
+func OpenBidiStreamImpl(ctx context.Context, c *connection, procedure string) *clientCall {
+	return &clientCall{bidiStream: c.client(procedure).CallBidiStream(ctx)}
 }
 
 func SendImpl(call *clientCall, request []byte) bool {

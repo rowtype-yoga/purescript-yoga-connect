@@ -1,0 +1,17 @@
+package:
+  name: yoga-strom-io-bench
+  description: Times a numeric stream through yoga-strom-io against an array and a
+    scalar loop
+  dependencies:
+    - arrays: ">=7.3.1 <8.0.0"
+    - effect: ">=4.0.1 <5.0.0"
+    - either: ">=6.1.1 <7.0.0"
+    - go-io: "*"
+    - integers: ">=6.0.2 <7.0.0"
+    - maybe: ">=6.0.1 <7.0.0"
+    - numbers: ">=9.0.2 <10.0.0"
+    - prelude: ">=6.0.3 <7.0.0"
+    - yoga-go-http-om: "*"
+    - yoga-strom-io: "*"
+  run:
+    main: Bench.Strom

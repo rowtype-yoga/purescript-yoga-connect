@@ -13,5 +13,6 @@ package:
     - yoga-connect: "*"
     - yoga-connect-go: "*"
     - yoga-go-http-om: "*"
+    - yoga-strom-io: "*"
   run:
     main: Demo.Client

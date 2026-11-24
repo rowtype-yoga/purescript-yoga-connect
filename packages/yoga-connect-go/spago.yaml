@@ -19,6 +19,7 @@ package:
     - yoga-connect: "*"
     - yoga-go-http-om: "*"
     - yoga-protobuf: "*"
+    - yoga-strom-io: "*"
   publish:
     version: 0.1.0
     license: MIT

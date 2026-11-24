@@ -10,5 +10,6 @@ package:
     - strings: ">=6.1.0 <7.0.0"
     - yoga-connect-go: "*"
     - yoga-go-http-om: "*"
+    - yoga-strom-io: "*"
   run:
     main: Demo.Server

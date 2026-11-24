@@ -14,7 +14,8 @@
 -- | | `ClientStream req res` | `Strom ctx err req -> OmIO ctx err res` |
 -- | | `BidiStream req res` | `Strom ctx err req -> Strom ctx err res` |
 -- |
--- | where `err` has `connectError :: ConnectError`, which is how a call fails.
+-- | where `err` has `connectError :: ConnectError`, which is how a call fails. A streaming call
+-- | lives as long as the stream: once its reader is done, the call is cancelled.
 module Yoga.Connect.Client
   ( Connection
   , connect
@@ -27,8 +28,7 @@ module Yoga.Connect.Client
 
 import Prelude
 
-import Control.Monad.Error.Class (throwError)
-import Control.Monad.Reader (ask)
+import Control.Monad.Error.Class (throwError, try)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol)
@@ -36,8 +36,7 @@ import Data.Variant (Variant)
 import Data.Variant as Variant
 import Effect (Effect)
 import Effect.Exception (Error)
-import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, EffectFn5, runEffectFn1, runEffectFn2, runEffectFn3, runEffectFn5)
-import Go.IO (forkIO)
+import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, EffectFn4, EffectFn6, runEffectFn1, runEffectFn2, runEffectFn3, runEffectFn4, runEffectFn6)
 import Go.IO.Internal (IO(..))
 import Go.IO.IORef (newIORef, readIORef, writeIORef)
 import Prim.Row as Row
@@ -49,8 +48,11 @@ import Record.Builder as Builder
 import Type.Proxy (Proxy(..))
 import Yoga.Connect.Service (BidiStream(..), ClientStream(..), Service, ServerStream(..), Unary(..), methodsOf)
 import Yoga.Connect.Status (Code(..), ConnectError(..), codeFromNumber)
-import Yoga.Connect.Strom (Strom(..), runStrom)
-import Yoga.Go.HTTP.OmIO (OmIO, liftIO, runOmIO)
+import Yoga.Go.HTTP.OmIO (OmIO, liftIO)
+import Yoga.OmIO.Strom (Exit(..), Scope, Step(..), Strom, addFinalizer, contextOf)
+import Yoga.OmIO.Strom as Strom
+import Yoga.OmIO.Strom.Context (Context, background)
+import Yoga.OmIO.Strom.Scope (throwIfInterrupted)
 import Yoga.Protobuf.Bytes (Bytes)
 import Yoga.Protobuf.Codec (Codec)
 import Yoga.Protobuf.Codec as Codec
@@ -104,63 +106,77 @@ class ClientMethod method ctx (err :: Row Type) function | method ctx err -> fun
 
 instance ClientMethod (Unary request response) ctx err (request -> OmIO ctx (Failing err) response) where
   clientMethod _ _ (Unary method) connection request = do
-    reply <- IO (runEffectFn5 callUnaryImpl failedWith Right connection method.procedure (Codec.encode method.request request)) # liftIO
+    reply <- IO (runEffectFn6 callUnaryImpl failedWith Right background connection method.procedure (Codec.encode method.request request)) # liftIO
     case reply of
       Left failure -> throwError (connectError failure)
       Right bytes -> decodeResponse method.response bytes
 
+-- | The call is made within the context of the scope the stream is opened in: once the reader is
+-- | done with the responses (`take` has enough, say), the call is cancelled, and the server's
+-- | stream is interrupted. A `Strom.timeout` around it is the call's deadline.
 instance ClientMethod (ServerStream request response) ctx err (request -> Strom ctx (Failing err) response) where
-  clientMethod _ _ (ServerStream method) connection request = Strom \sink -> do
-    call <- IO (runEffectFn3 openServerStreamImpl connection method.procedure (Codec.encode method.request request)) # liftIO
-    receiveAll call method.response sink
+  clientMethod _ _ (ServerStream method) connection request = Strom.fromPull \scope -> do
+    call <- IO (runEffectFn4 openServerStreamImpl (contextOf scope) connection method.procedure (Codec.encode method.request request)) # liftIO
+    _ <- addFinalizer scope \_ -> closeCall call
+    pure (receiveNext scope call method.response)
 
 instance ClientMethod (ClientStream request response) ctx err (Strom ctx (Failing err) request -> OmIO ctx (Failing err) response) where
   clientMethod _ _ (ClientStream method) connection outgoing = do
-    call <- IO (runEffectFn2 openClientStreamImpl connection method.procedure) # liftIO
-    _ <- runStrom (sendTo call method.request) outgoing
+    call <- IO (runEffectFn3 openClientStreamImpl background connection method.procedure) # liftIO
+    outgoing # Strom.mapM (sendTo call method.request) # Strom.takeWhile identity # Strom.runDrain
     reply <- IO (runEffectFn3 closeAndReceiveImpl failedWith Right call) # liftIO
     case reply of
       Left failure -> throwError (connectError failure)
       Right bytes -> decodeResponse method.response bytes
 
--- | The requests go out on a thread of their own while the responses come in. If sending fails,
--- | the call is closed and the failure is the stream's.
+-- | The requests go out on a goroutine of their own while the responses come in, both within
+-- | the context of the scope the stream is opened in. If sending fails, the call is closed and the
+-- | failure is the stream's.
 instance ClientMethod (BidiStream request response) ctx err (Strom ctx (Failing err) request -> Strom ctx (Failing err) response) where
-  clientMethod _ _ (BidiStream method) connection outgoing = Strom \sink -> do
-    context <- ask
-    call <- IO (runEffectFn2 openBidiStreamImpl connection method.procedure) # liftIO
+  clientMethod _ _ (BidiStream method) connection outgoing = Strom.fromPull \scope -> do
+    call <- IO (runEffectFn3 openBidiStreamImpl (contextOf scope) connection method.procedure) # liftIO
+    _ <- addFinalizer scope \_ -> closeCall call
     sendFailure <- newIORef Nothing # liftIO
-    _ <- forkIO (sendAll context call sendFailure) # liftIO
-    finished <- receiveAll call method.response sink
-    failedSending <- readIORef sendFailure # liftIO
-    case failedSending of
-      Just failure -> throwError failure
-      Nothing -> pure finished
+    Strom.forkDrain scope (sending call sendFailure)
+    pure do
+      received <- try (receiveNext scope call method.response)
+      failedSending <- readIORef sendFailure # liftIO
+      case failedSending, received of
+        Just failure, _ -> throwError failure
+        Nothing, Left failure -> throwError failure
+        Nothing, Right step -> pure step
     where
-    sendAll context call sendFailure = do
-      sent <- runOmIO context (runStrom (sendTo call method.request) outgoing)
-      case sent of
-        Left failure -> writeIORef sendFailure (Just failure) *> IO (runEffectFn1 closeImpl call)
-        Right _ -> IO (runEffectFn1 closeSendingImpl call)
+    sending call sendFailure = outgoing
+      # Strom.mapM (sendTo call method.request)
+      # Strom.takeWhile identity
+      # Strom.onExit (afterSending call sendFailure)
 
--- | Hands the responses to the sink as they arrive. If the sink stops early, the call is
--- | closed.
-receiveAll :: forall ctx err response. Call -> Codec response -> (response -> OmIO ctx (Failing err) Boolean) -> OmIO ctx (Failing err) Boolean
-receiveAll call codec sink = receiveNext
-  where
-  receiveNext = do
-    received <- IO (runEffectFn1 receiveImpl call) # liftIO
-    if received then do
-      bytes <- IO (runEffectFn1 receivedImpl call) # liftIO
-      response <- decodeResponse codec bytes
-      more <- sink response
-      if more then receiveNext else (IO (runEffectFn1 closeImpl call) # liftIO) $> false
-    else do
-      outcome <- IO (runEffectFn3 outcomeImpl failedWith (Right unit) call) # liftIO
-      case outcome of
-        Left failure -> throwError (connectError failure)
-        Right _ -> pure true
+    afterSending call sendFailure = case _ of
+      Ended -> IO (runEffectFn1 closeSendingImpl call) # liftIO
+      Failed failure -> do
+        writeIORef sendFailure (Just failure) # liftIO
+        closeCall call
+      Interrupted -> pure unit
 
+-- | The next response, a chunk each. Once the scope is interrupted, so is the stream.
+receiveNext :: forall ctx err response. Scope ctx (Failing err) -> Call -> Codec response -> OmIO ctx (Failing err) (Step response)
+receiveNext scope call codec = do
+  received <- IO (runEffectFn1 receiveImpl call) # liftIO
+  if received then do
+    bytes <- IO (runEffectFn1 receivedImpl call) # liftIO
+    response <- decodeResponse codec bytes
+    pure (Emit [ response ])
+  else do
+    throwIfInterrupted scope
+    outcome <- IO (runEffectFn3 outcomeImpl failedWith (Right unit) call) # liftIO
+    case outcome of
+      Left failure -> throwError (connectError failure)
+      Right _ -> pure End
+
+closeCall :: forall ctx err. Call -> OmIO ctx err Unit
+closeCall call = IO (runEffectFn1 closeImpl call) # liftIO
+
+-- | Sends the request, and says whether the server is still there to take more.
 sendTo :: forall ctx err request. Call -> Codec request -> request -> OmIO ctx err Boolean
 sendTo call codec request = IO (Codec.encodeEffect codec request >>= runEffectFn2 sendImpl call) # liftIO
 
@@ -177,10 +193,13 @@ failedWith code message = Left (ConnectError { code: codeFromNumber code, messag
 
 type Call = ClientCall
 
-foreign import callUnaryImpl :: EffectFn5 (Int -> String -> Either ConnectError Bytes) (Bytes -> Either ConnectError Bytes) Connection String Bytes (Either ConnectError Bytes)
-foreign import openServerStreamImpl :: EffectFn3 Connection String Bytes ClientCall
-foreign import openClientStreamImpl :: EffectFn2 Connection String ClientCall
-foreign import openBidiStreamImpl :: EffectFn2 Connection String ClientCall
+foreign import callUnaryImpl :: EffectFn6 (Int -> String -> Either ConnectError Bytes) (Bytes -> Either ConnectError Bytes) Context Connection String Bytes (Either ConnectError Bytes)
+
+-- | Opens a call within the context: cancelling it cancels the call, and its deadline is the
+-- | call's.
+foreign import openServerStreamImpl :: EffectFn4 Context Connection String Bytes ClientCall
+foreign import openClientStreamImpl :: EffectFn3 Context Connection String ClientCall
+foreign import openBidiStreamImpl :: EffectFn3 Context Connection String ClientCall
 
 -- | `false` once the server is gone.
 foreign import sendImpl :: EffectFn2 ClientCall Bytes Boolean

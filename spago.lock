@@ -34,6 +34,9 @@
             },
             {
               "yoga-go-http-om": "*"
+            },
+            {
+              "yoga-strom-io": "*"
             }
           ]
         },
@@ -84,6 +87,9 @@
             },
             {
               "yoga-go-http-om": "*"
+            },
+            {
+              "yoga-strom-io": "*"
             }
           ]
         },
@@ -156,6 +162,9 @@
             },
             {
               "yoga-protobuf": "*"
+            },
+            {
+              "yoga-strom-io": "*"
             }
           ]
         },
@@ -171,6 +180,12 @@
               "aff": ">=8.0.1 <9.0.0"
             },
             {
+              "arrays": ">=7.3.1 <8.0.0"
+            },
+            {
+              "bifunctors": ">=6.1.1 <7.0.0"
+            },
+            {
               "datetime": ">=6.1.1 <7.0.0"
             },
             {
@@ -180,16 +195,28 @@
               "either": ">=6.1.1 <7.0.0"
             },
             {
+              "exceptions": ">=6.1.1 <7.0.0"
+            },
+            {
               "go-io": "*"
             },
             {
               "greeter-proto": "*"
             },
             {
+              "maybe": ">=6.0.1 <7.0.0"
+            },
+            {
               "prelude": ">=6.0.3 <7.0.0"
             },
             {
               "spec": ">=8.1.2 <9.0.0"
+            },
+            {
+              "transformers": ">=6.1.1 <7.0.0"
+            },
+            {
+              "tuples": ">=7.0.1 <8.0.0"
             },
             {
               "variant": ">=8.0.0 <9.0.0"
@@ -205,6 +232,162 @@
             },
             {
               "yoga-protobuf": "*"
+            },
+            {
+              "yoga-strom-io": "*"
+            }
+          ]
+        },
+        "test": {
+          "dependencies": []
+        }
+      },
+      "yoga-strom-io": {
+        "path": "packages/yoga-strom-io",
+        "core": {
+          "dependencies": [
+            {
+              "arrays": ">=7.3.1 <8.0.0"
+            },
+            {
+              "datetime": ">=6.1.1 <7.0.0"
+            },
+            {
+              "effect": ">=4.0.1 <5.0.0"
+            },
+            {
+              "either": ">=6.1.1 <7.0.0"
+            },
+            {
+              "exceptions": ">=6.1.1 <7.0.0"
+            },
+            {
+              "foldable-traversable": ">=6.0.1 <7.0.0"
+            },
+            {
+              "go-io": "*"
+            },
+            {
+              "integers": ">=6.0.2 <7.0.0"
+            },
+            {
+              "maybe": ">=6.0.1 <7.0.0"
+            },
+            {
+              "numbers": ">=9.0.2 <10.0.0"
+            },
+            {
+              "prelude": ">=6.0.3 <7.0.0"
+            },
+            {
+              "transformers": ">=6.1.1 <7.0.0"
+            },
+            {
+              "tuples": ">=7.0.1 <8.0.0"
+            },
+            {
+              "variant": ">=8.0.0 <9.0.0"
+            },
+            {
+              "yoga-go-http-om": "*"
+            }
+          ]
+        },
+        "test": {
+          "dependencies": []
+        }
+      },
+      "yoga-strom-io-bench": {
+        "path": "packages/yoga-strom-io/bench",
+        "core": {
+          "dependencies": [
+            {
+              "arrays": ">=7.3.1 <8.0.0"
+            },
+            {
+              "effect": ">=4.0.1 <5.0.0"
+            },
+            {
+              "either": ">=6.1.1 <7.0.0"
+            },
+            {
+              "go-io": "*"
+            },
+            {
+              "integers": ">=6.0.2 <7.0.0"
+            },
+            {
+              "maybe": ">=6.0.1 <7.0.0"
+            },
+            {
+              "numbers": ">=9.0.2 <10.0.0"
+            },
+            {
+              "prelude": ">=6.0.3 <7.0.0"
+            },
+            {
+              "yoga-go-http-om": "*"
+            },
+            {
+              "yoga-strom-io": "*"
+            }
+          ]
+        },
+        "test": {
+          "dependencies": []
+        }
+      },
+      "yoga-strom-io-test": {
+        "path": "packages/yoga-strom-io/specs",
+        "core": {
+          "dependencies": [
+            {
+              "aff": ">=8.0.1 <9.0.0"
+            },
+            {
+              "arrays": ">=7.3.1 <8.0.0"
+            },
+            {
+              "datetime": ">=6.1.1 <7.0.0"
+            },
+            {
+              "effect": ">=4.0.1 <5.0.0"
+            },
+            {
+              "either": ">=6.1.1 <7.0.0"
+            },
+            {
+              "exceptions": ">=6.1.1 <7.0.0"
+            },
+            {
+              "foldable-traversable": ">=6.0.1 <7.0.0"
+            },
+            {
+              "go-io": "*"
+            },
+            {
+              "integers": ">=6.0.2 <7.0.0"
+            },
+            {
+              "maybe": ">=6.0.1 <7.0.0"
+            },
+            {
+              "prelude": ">=6.0.3 <7.0.0"
+            },
+            {
+              "spec": ">=8.1.2 <9.0.0"
+            },
+            {
+              "tuples": ">=7.0.1 <8.0.0"
+            },
+            {
+              "variant": ">=8.0.0 <9.0.0"
+            },
+            {
+              "yoga-go-http-om": "*"
+            },
+            {
+              "yoga-strom-io": "*"
             }
           ]
         },

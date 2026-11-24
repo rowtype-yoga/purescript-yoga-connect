@@ -13,6 +13,9 @@
 -- | holds the status codes it rejects calls with (`Rejections`); any other exception is
 -- | `internal`.
 -- |
+-- | The server runs a handler's response stream within the call's context: once the client
+-- | cancels or the deadline passes, the stream is interrupted and its finalizers run.
+-- |
 -- | | Method | Handler |
 -- | | --- | --- |
 -- | | `Unary req res` | `req -> OmIO ctx err res` |
@@ -53,9 +56,12 @@ import Type.Equality (class TypeEquals, to)
 import Type.Proxy (Proxy(..))
 import Yoga.Connect.Service (BidiStream(..), ClientStream(..), Service, ServerStream(..), Unary(..), methodsOf)
 import Yoga.Connect.Status (class Rejection, Code(..), Rejections, codeNumber, rejectWith)
-import Yoga.Connect.Strom (Strom(..), runStrom)
 import Yoga.Go.HTTP.Om.Server (BoundAddress, Host(..), ListenOptions, Port(..))
 import Yoga.Go.HTTP.OmIO (OmIO, liftIO, runOmIO)
+import Yoga.OmIO.Strom (Step(..), Strom)
+import Yoga.OmIO.Strom as Strom
+import Yoga.OmIO.Strom.Context (Context, isDone)
+import Yoga.OmIO.Strom.Scope (interrupted)
 import Yoga.Protobuf.Bytes (Bytes)
 import Yoga.Protobuf.Codec as Codec
 
@@ -162,7 +168,7 @@ instance
     where
     answer call = case Codec.decode method.request (requestImpl call) of
       Left problem -> failCall call InvalidArgument (show problem)
-      Right request -> runOmIO (to context) (runStrom (sendTo call method.response) (handler request)) >>= case _ of
+      Right request -> runOmIO (to context) (respondWithStream call method.response (handler request)) >>= case _ of
         Left problem -> failWith call problem
         Right _ -> pure unit
 
@@ -186,7 +192,7 @@ instance
   ServeMethod (BidiStream request response) (Strom handlerContext err request -> Strom handlerContext err response) ctx where
   serveMethod context (BidiStream method) handler server = runEffectFn3 bidiStreamImpl method.procedure answer server
     where
-    answer call = runOmIO (to context) (runStrom (sendTo call method.response) (handler (incoming call method.request))) >>= case _ of
+    answer call = runOmIO (to context) (respondWithStream call method.response (handler (incoming call method.request))) >>= case _ of
       Left problem -> failWith call problem
       Right _ -> pure unit
 
@@ -194,25 +200,40 @@ instance
 respondWith :: forall response. Call -> Codec.Codec response -> response -> IO Unit
 respondWith call codec response = IO (Codec.encodeEffect codec response >>= runEffectFn2 respondImpl call)
 
--- | Sends each response as it comes, and says to stop once the client is gone.
-sendTo :: forall ctx err response. Call -> Codec.Codec response -> response -> OmIO ctx err Boolean
-sendTo call codec response = IO (Codec.encodeEffect codec response >>= runEffectFn2 sendImpl call) # liftIO
+-- | Sends each response as it comes, within the call's context: once the client is gone, the
+-- | stream is interrupted.
+respondWithStream :: forall ctx err response. Call -> Codec.Codec response -> Strom ctx err response -> OmIO ctx err Unit
+respondWithStream call codec responses = Strom.forEachWithin (contextImpl call) (sendTo call codec) responses
 
--- | The client's messages, decoded as they arrive. A message that doesn't decode ends the stream
--- | and fails the call with `invalid_argument`.
+-- | Sends the response, and fails with `interrupted` once the client is gone.
+sendTo :: forall ctx err response. Call -> Codec.Codec response -> response -> OmIO ctx err Unit
+sendTo call codec response = do
+  sent <- IO (Codec.encodeEffect codec response >>= runEffectFn2 sendImpl call) # liftIO
+  unless sent (throwError interrupted)
+
+-- | The client's messages, decoded as they arrive, a chunk each. A message that doesn't decode
+-- | fails the stream and the call with `invalid_argument`; once the client cancels, the stream is
+-- | interrupted.
 incoming :: forall ctx err request. Call -> Codec.Codec request -> Strom ctx err request
-incoming call codec = Strom receiveInto
+incoming call codec = Strom.fromPull \_ -> pure receiveNext
   where
-  receiveInto sink = do
+  receiveNext = do
     received <- IO (runEffectFn1 receiveImpl call) # liftIO
-    if not received then pure true
+    if received then decodeReceived
     else do
-      received <- IO (runEffectFn1 receivedImpl call) # liftIO
-      case Codec.decode codec received of
-        Left problem -> (failCall call InvalidArgument (show problem) # liftIO) $> false
-        Right request -> do
-          more <- sink request
-          if more then receiveInto sink else pure false
+      cancelled <- isDone (contextImpl call) # liftIO
+      brokenOff <- IO (runEffectFn1 failedImpl call) # liftIO
+      if cancelled then throwError interrupted
+      else if brokenOff then throwError (Variant.inj (Proxy :: Proxy "exception") (error "the client's stream broke off"))
+      else pure End
+
+  decodeReceived = do
+    bytes <- IO (runEffectFn1 receivedImpl call) # liftIO
+    case Codec.decode codec bytes of
+      Right request -> pure (Emit [ request ])
+      Left problem -> do
+        failCall call InvalidArgument (show problem) # liftIO
+        throwError (Variant.inj (Proxy :: Proxy "exception") (error ("a request doesn't decode: " <> show problem)))
 
 failWith :: forall err labels. RowToList err labels => Rejection labels err => Call -> Variant (exception :: Error | err) -> IO Unit
 failWith call = Variant.on (Proxy :: Proxy "exception") (failCall call Internal <<< message) (rejectWith (failCall call))
@@ -227,6 +248,12 @@ foreign import bidiStreamImpl :: EffectFn3 String (Call -> IO Unit) Server Unit
 
 -- | The request of a unary or server-streaming call.
 foreign import requestImpl :: Call -> Bytes
+
+-- | Done once the client cancels the call or its deadline passes.
+foreign import contextImpl :: Call -> Context
+
+-- | Whether the call has failed, such as when the client's stream broke off.
+foreign import failedImpl :: EffectFn1 Call Boolean
 
 foreign import respondImpl :: EffectFn2 Call Bytes Unit
 

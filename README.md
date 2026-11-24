@@ -47,15 +47,16 @@ sayHello { name }
   | otherwise = pure { message: "Hello, " <> name <> "!" }
 
 listGreetings :: forall ctx. ListRequest -> Strom ctx () Greeting
-listGreetings { name, count } = Strom.range 1 count # map \index -> { index, text: name }
+listGreetings { name, count } = Strom.range 1 (count + 1) # map \index -> { index, text: name }
 
 greetEveryone :: forall ctx. Strom ctx () HelloRequest -> OmIO ctx () HelloReply
 greetEveryone people = do
-  names <- people # map _.name # Strom.collect
+  names <- people # map _.name # Strom.runCollect
   pure { message: "Hello, " <> String.joinWith " and " names <> "!" }
 
+-- | Ends when the client is done talking; the heartbeat stops with it.
 chat :: forall ctx. Strom ctx () ChatMessage -> Strom ctx () ChatMessage
-chat incoming = Strom.merge (incoming # map answer) heartbeats
+chat incoming = Strom.mergeHaltLeft (incoming # map answer) heartbeats
 ```
 
 | Method | Handler |
@@ -91,20 +92,31 @@ talkTo connection = do
 
 ## Streams
 
-`Yoga.Connect.Strom` is yoga-om-strom's `Strom`, running in `OmIO` on the call's goroutine instead
-of in `Aff`: `range`, `fromArray`, `iterate`, `unfold`, `repeatOm`, `every`, `map`, `mapM`,
-`filter`, `scan`, `take`, `takeWhile`, `drop`, `concatMap`, `merge`, `<>`, and `forEach`, `foldl`,
-`collect`, `drain` to run one.
+Streams are `Yoga.OmIO.Strom`, from `packages/yoga-strom-io`: pulled in chunks, like ZIO's
+`ZStream`, in `OmIO`. Nothing is read before someone pulls, so a slow client slows the handler
+down: `Send` blocks while HTTP/2 flow control says the client can't take more.
 
-A stream hands each element over and waits until it's taken. A server stream sends each message as
-it comes, and `Send` blocks while HTTP/2 flow control says the client can't take more, so a slow
-client slows the handler down and nothing piles up. `take` stops the stream it takes from, and
-`merge` runs both sides on threads of their own.
+A streaming call lives as long as its stream:
+
+- A client that's had enough cancels the call. `take 3` of a server stream ends it after the third
+  message, and the server's stream is interrupted: its goroutines stop and its finalizers run.
+- `Strom.timeout` around a client's stream is the call's deadline, and the server sees it.
+- When a client cancels or its deadline passes, the handler's stream is interrupted the same way.
+
+```purescript
+listGreetings { name, count } = Strom.every (Milliseconds 20.0)
+  # Strom.take count
+  # map greeting
+  # Strom.ensuring (log "listGreetings is done, however it ended" # liftIO)
+
+greeterClient.listGreetings { name: "Grace", count: 1000 } # Strom.take 3 # Strom.forEach say
+```
 
 ## Packages
 
 - `yoga-connect`: the service types and status codes, for both sides and any backend
-- `yoga-connect-go`: the server, the client and `Strom` on Go
+- `yoga-connect-go`: the server and the client on Go
+- `yoga-strom-io`: the streams, which don't need gRPC
 
 A browser client would be another package next to `yoga-connect-go`, derived from the same rows.
 
@@ -130,4 +142,5 @@ grpcurl -plaintext -proto demo/proto/greeter.proto \
 
 ```
 iris run --go -p yoga-connect-test
+iris run --go -p yoga-strom-io-test
 ```

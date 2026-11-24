@@ -27,6 +27,7 @@ type server struct {
 // call holds what the PureScript handler reads and writes. Exactly one of the streams is set
 // for a streaming call.
 type call struct {
+	context      context.Context
 	request      []byte
 	response     []byte
 	received     []byte
@@ -41,8 +42,8 @@ func CreateServerImpl() *server {
 }
 
 func UnaryImpl(procedure string, handle func(*call), s *server) {
-	s.routes.Handle(procedure, connect.NewUnaryHandler(procedure, func(_ context.Context, request *connect.Request[[]byte]) (*connect.Response[[]byte], error) {
-		answered := &call{request: *request.Msg}
+	s.routes.Handle(procedure, connect.NewUnaryHandler(procedure, func(ctx context.Context, request *connect.Request[[]byte]) (*connect.Response[[]byte], error) {
+		answered := &call{context: ctx, request: *request.Msg}
 		if failure := run(handle, answered); failure != nil {
 			return nil, failure
 		}
@@ -51,14 +52,14 @@ func UnaryImpl(procedure string, handle func(*call), s *server) {
 }
 
 func ServerStreamImpl(procedure string, handle func(*call), s *server) {
-	s.routes.Handle(procedure, connect.NewServerStreamHandler(procedure, func(_ context.Context, request *connect.Request[[]byte], stream *connect.ServerStream[[]byte]) error {
-		return asError(run(handle, &call{request: *request.Msg, serverStream: stream}))
+	s.routes.Handle(procedure, connect.NewServerStreamHandler(procedure, func(ctx context.Context, request *connect.Request[[]byte], stream *connect.ServerStream[[]byte]) error {
+		return asError(run(handle, &call{context: ctx, request: *request.Msg, serverStream: stream}))
 	}, rawBytes))
 }
 
 func ClientStreamImpl(procedure string, handle func(*call), s *server) {
-	s.routes.Handle(procedure, connect.NewClientStreamHandler(procedure, func(_ context.Context, stream *connect.ClientStream[[]byte]) (*connect.Response[[]byte], error) {
-		answered := &call{clientStream: stream}
+	s.routes.Handle(procedure, connect.NewClientStreamHandler(procedure, func(ctx context.Context, stream *connect.ClientStream[[]byte]) (*connect.Response[[]byte], error) {
+		answered := &call{context: ctx, clientStream: stream}
 		if failure := run(handle, answered); failure != nil {
 			return nil, failure
 		}
@@ -67,22 +68,36 @@ func ClientStreamImpl(procedure string, handle func(*call), s *server) {
 }
 
 func BidiStreamImpl(procedure string, handle func(*call), s *server) {
-	s.routes.Handle(procedure, connect.NewBidiStreamHandler(procedure, func(_ context.Context, stream *connect.BidiStream[[]byte, []byte]) error {
-		return asError(run(handle, &call{bidiStream: stream}))
+	s.routes.Handle(procedure, connect.NewBidiStreamHandler(procedure, func(ctx context.Context, stream *connect.BidiStream[[]byte, []byte]) error {
+		return asError(run(handle, &call{context: ctx, bidiStream: stream}))
 	}, rawBytes))
 }
 
 // run calls the handler and returns the call's failure. A panic is an internal error rather
-// than a dropped connection.
+// than a dropped connection. A call the client cancelled, or whose deadline passed, ends with
+// that, whatever the handler made of it.
 func run(handle func(*call), answered *call) (failure *connect.Error) {
 	defer func() {
 		if recovered := recover(); recovered != nil {
 			failure = connect.NewError(connect.CodeInternal, fmt.Errorf("%v", recovered))
 		}
+		if ended := answered.context.Err(); ended != nil {
+			failure = connect.NewError(codeOfEnded(ended), ended)
+		}
 	}()
 	handle(answered)
 	return answered.failure
 }
+
+func codeOfEnded(ended error) connect.Code {
+	if errors.Is(ended, context.DeadlineExceeded) {
+		return connect.CodeDeadlineExceeded
+	}
+	return connect.CodeCanceled
+}
+
+// ContextImpl is the call's context, done once the client cancels or the deadline passes.
+func ContextImpl(c *call) context.Context { return c.context }
 
 func asError(failure *connect.Error) error {
 	if failure == nil {
@@ -128,6 +143,9 @@ func (c *call) ended(err error) {
 }
 
 func ReceivedImpl(c *call) []byte { return c.received }
+
+// FailedImpl says whether the call has failed, such as when the client's stream broke off.
+func FailedImpl(c *call) bool { return c.failure != nil }
 
 func FailImpl(c *call, code int32, message string) {
 	if c.failure == nil {
