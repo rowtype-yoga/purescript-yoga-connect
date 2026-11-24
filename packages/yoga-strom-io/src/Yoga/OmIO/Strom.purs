@@ -1105,28 +1105,21 @@ runLast stream = foldChunks Nothing (\latest chunk -> pure (Array.last chunk <|>
 foldChunks :: forall ctx err a b. b -> (b -> Chunk a -> OmIO ctx err b) -> Strom ctx err a -> OmIO ctx err b
 foldChunks start step stream = scoped \scope -> do
   pull <- open scope stream
-  foldFrom scope pull start
-  where
-  foldFrom scope pull accumulated = do
-    throwIfInterrupted scope
-    pulled <- pull
-    case pulled of
-      End -> pure accumulated
-      Emit chunk -> step accumulated chunk >>= foldFrom scope pull
+  foldPulled step scope pull start
+
+-- | Folds what the pull gives, chunk by chunk, until it ends.
+foldPulled :: forall ctx err a b. (b -> Chunk a -> OmIO ctx err b) -> Scope ctx err -> Pull ctx err a -> b -> OmIO ctx err b
+foldPulled step scope pull accumulated = do
+  throwIfInterrupted scope
+  pulled <- pull
+  case pulled of
+    End -> pure accumulated
+    Emit chunk -> step accumulated chunk >>= foldPulled step scope pull
 
 forEachChunkIn :: forall ctx err a. Scope ctx err -> (Chunk a -> OmIO ctx err Unit) -> Strom ctx err a -> OmIO ctx err Unit
 forEachChunkIn scope eachChunk stream = do
   pull <- open scope stream
-  pullUntilEnd pull
-  where
-  pullUntilEnd pull = do
-    throwIfInterrupted scope
-    pulled <- pull
-    case pulled of
-      End -> pure unit
-      Emit chunk -> do
-        eachChunk chunk
-        pullUntilEnd pull
+  foldPulled (\_ chunk -> eachChunk chunk) scope pull unit
 
 -- | Runs the computation on each element of the chunk, in order.
 forEachIn :: forall ctx err a. Chunk a -> (a -> OmIO ctx err Unit) -> OmIO ctx err Unit
