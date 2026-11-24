@@ -26,6 +26,36 @@ main = launchIO_ do
   timed "array map and foldl" \_ -> pure (arrayTotal readings)
   timed "scalar loop" \_ -> pure (loopTotal readings)
   timed "range, map, take, forEach" \_ -> rangeTotal (cores * 500000)
+  timed "buffer 16, chunks of 16" \_ -> bufferedTotal readings
+  timed "merge of two, chunks of 16" \_ -> mergedTotal readings
+  timed "mapPar 8 over 20000" \_ -> mapParTotal 20000
+
+-- | A handover between goroutines for every 16 readings.
+bufferedTotal :: Array Number -> IO Number
+bufferedTotal readings = Strom.fromArray readings
+  # Strom.rechunk 16
+  # Strom.buffer 16
+  # map calibrated
+  # sumOf
+
+-- | Two producers handing chunks of 16 to one reader.
+mergedTotal :: Array Number -> IO Number
+mergedTotal readings = Strom.merge half half
+  # map calibrated
+  # sumOf
+  where
+  half = Strom.fromArray (Array.take (Array.length readings / 2) readings) # Strom.rechunk 16
+
+-- | A worker goroutine and a permit for every element.
+mapParTotal :: Int -> IO Number
+mapParTotal count = Strom.range 0 count
+  # Strom.mapPar 8 (\index -> pure (toNumber index * 1.19))
+  # sumOf
+
+sumOf :: Strom.Strom Unit () Number -> IO Number
+sumOf stream = do
+  total <- runOmIO unit (Strom.runFold 0.0 (+) stream)
+  pure (either (const 0.0) identity total)
 
 sensorReadings :: Int -> Array Number
 sensorReadings count = Array.range 0 (count - 1) <#> \index -> toNumber (index `mod` 1000) * 0.5
