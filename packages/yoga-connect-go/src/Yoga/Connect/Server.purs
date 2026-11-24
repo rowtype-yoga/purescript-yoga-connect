@@ -52,7 +52,7 @@ import Record as Record
 import Type.Equality (class TypeEquals, to)
 import Type.Proxy (Proxy(..))
 import Yoga.Connect.Service (BidiStream(..), ClientStream(..), Service, ServerStream(..), Unary(..), methodsOf)
-import Yoga.Connect.Status (Code(..), ConnectError(..), Rejections, codeNumber, fromRejection)
+import Yoga.Connect.Status (class Rejection, Code(..), Rejections, codeNumber, rejectWith)
 import Yoga.Connect.Strom (Strom(..), runStrom)
 import Yoga.Go.HTTP.Om.Server (BoundAddress, Host(..), ListenOptions, Port(..))
 import Yoga.Go.HTTP.OmIO (OmIO, liftIO, runOmIO)
@@ -139,7 +139,8 @@ class ServeMethod method handler ctx where
 -- | `TypeEquals` lets a handler that works in any context, `forall ctx. … OmIO ctx …`, take
 -- | the server's.
 instance
-  ( Row.Union err rest Rejections
+  ( RowToList err labels
+  , Rejection labels err
   , TypeEquals ctx handlerContext
   ) =>
   ServeMethod (Unary request response) (request -> OmIO handlerContext err response) ctx where
@@ -149,10 +150,11 @@ instance
       Left problem -> failCall call InvalidArgument (show problem)
       Right request -> runOmIO (to context) (handler request) >>= case _ of
         Left problem -> failWith call problem
-        Right response -> IO (runEffectFn2 respondImpl call (Codec.encode method.response response))
+        Right response -> respondWith call method.response response
 
 instance
-  ( Row.Union err rest Rejections
+  ( RowToList err labels
+  , Rejection labels err
   , TypeEquals ctx handlerContext
   ) =>
   ServeMethod (ServerStream request response) (request -> Strom handlerContext err response) ctx where
@@ -165,7 +167,8 @@ instance
         Right _ -> pure unit
 
 instance
-  ( Row.Union err rest Rejections
+  ( RowToList err labels
+  , Rejection labels err
   , TypeEquals ctx handlerContext
   ) =>
   ServeMethod (ClientStream request response) (Strom handlerContext err request -> OmIO handlerContext err response) ctx where
@@ -173,10 +176,11 @@ instance
     where
     answer call = runOmIO (to context) (handler (incoming call method.request)) >>= case _ of
       Left problem -> failWith call problem
-      Right response -> IO (runEffectFn2 respondImpl call (Codec.encode method.response response))
+      Right response -> respondWith call method.response response
 
 instance
-  ( Row.Union err rest Rejections
+  ( RowToList err labels
+  , Rejection labels err
   , TypeEquals ctx handlerContext
   ) =>
   ServeMethod (BidiStream request response) (Strom handlerContext err request -> Strom handlerContext err response) ctx where
@@ -186,9 +190,13 @@ instance
       Left problem -> failWith call problem
       Right _ -> pure unit
 
+-- | Encodes the response when the call answers with it.
+respondWith :: forall response. Call -> Codec.Codec response -> response -> IO Unit
+respondWith call codec response = IO (Codec.encodeEffect codec response >>= runEffectFn2 respondImpl call)
+
 -- | Sends each response as it comes, and says to stop once the client is gone.
 sendTo :: forall ctx err response. Call -> Codec.Codec response -> response -> OmIO ctx err Boolean
-sendTo call codec response = IO (runEffectFn2 sendImpl call (Codec.encode codec response)) # liftIO
+sendTo call codec response = IO (Codec.encodeEffect codec response >>= runEffectFn2 sendImpl call) # liftIO
 
 -- | The client's messages, decoded as they arrive. A message that doesn't decode ends the stream
 -- | and fails the call with `invalid_argument`.
@@ -206,11 +214,8 @@ incoming call codec = Strom receiveInto
           more <- sink request
           if more then receiveInto sink else pure false
 
-failWith :: forall err rest. Row.Union err rest Rejections => Call -> Variant (exception :: Error | err) -> IO Unit
-failWith call = Variant.on (Proxy :: Proxy "exception") (failCall call Internal <<< message) rejected
-  where
-  rejected rejection = case fromRejection (Variant.expand rejection) of
-    ConnectError { code, message } -> failCall call code message
+failWith :: forall err labels. RowToList err labels => Rejection labels err => Call -> Variant (exception :: Error | err) -> IO Unit
+failWith call = Variant.on (Proxy :: Proxy "exception") (failCall call Internal <<< message) (rejectWith (failCall call))
 
 failCall :: Call -> Code -> String -> IO Unit
 failCall call code explanation = IO (runEffectFn3 failImpl call (codeNumber code) explanation)

@@ -11,12 +11,23 @@ module Yoga.Connect.Status
   , ConnectError(..)
   , Rejections
   , fromRejection
+  , rejection
+  , rejectWith
+  , class RejectionCode
+  , rejectionCode
+  , class Rejection
+  , rejectionOf
   ) where
 
 import Prelude
 
 import Data.Maybe (Maybe(..))
-import Data.Variant (Variant, match)
+import Data.Symbol (class IsSymbol)
+import Data.Variant (Variant, case_, match, on)
+import Prim.Row as Row
+import Prim.RowList (class RowToList, RowList)
+import Prim.RowList as RowList
+import Type.Proxy (Proxy(..))
 
 -- | The status codes, without `OK`.
 data Code
@@ -150,6 +161,84 @@ type Rejections =
   , dataLoss :: String
   , unauthenticated :: String
   )
+
+-- | The code a label of `Rejections` stands for.
+class RejectionCode (label :: Symbol) where
+  rejectionCode :: Code
+
+instance RejectionCode "canceled" where
+  rejectionCode = Canceled
+
+instance RejectionCode "unknown" where
+  rejectionCode = Unknown
+
+instance RejectionCode "invalidArgument" where
+  rejectionCode = InvalidArgument
+
+instance RejectionCode "deadlineExceeded" where
+  rejectionCode = DeadlineExceeded
+
+instance RejectionCode "notFound" where
+  rejectionCode = NotFound
+
+instance RejectionCode "alreadyExists" where
+  rejectionCode = AlreadyExists
+
+instance RejectionCode "permissionDenied" where
+  rejectionCode = PermissionDenied
+
+instance RejectionCode "resourceExhausted" where
+  rejectionCode = ResourceExhausted
+
+instance RejectionCode "failedPrecondition" where
+  rejectionCode = FailedPrecondition
+
+instance RejectionCode "aborted" where
+  rejectionCode = Aborted
+
+instance RejectionCode "outOfRange" where
+  rejectionCode = OutOfRange
+
+instance RejectionCode "unimplemented" where
+  rejectionCode = Unimplemented
+
+instance RejectionCode "internal" where
+  rejectionCode = Internal
+
+instance RejectionCode "unavailable" where
+  rejectionCode = Unavailable
+
+instance RejectionCode "dataLoss" where
+  rejectionCode = DataLoss
+
+instance RejectionCode "unauthenticated" where
+  rejectionCode = Unauthenticated
+
+-- | The code and message of a rejection whose labels are known: one test per label of the row,
+-- | rather than one per code.
+class Rejection (labels :: RowList Type) (row :: Row Type) where
+  rejectionOf :: forall result. Proxy labels -> (Code -> String -> result) -> Variant row -> result
+
+instance Rejection RowList.Nil () where
+  rejectionOf _ _ = case_
+
+instance
+  ( IsSymbol label
+  , RejectionCode label
+  , Row.Cons label String rest row
+  , Rejection tail rest
+  ) =>
+  Rejection (RowList.Cons label String tail) row where
+  rejectionOf _ rejected = on (Proxy :: Proxy label) (rejected (rejectionCode @label)) (rejectionOf (Proxy :: Proxy tail) rejected)
+
+-- | Hands the code and message of a handler's rejection, whichever labels of `Rejections` its
+-- | row has, to `rejected`.
+rejectWith :: forall row labels result. RowToList row labels => Rejection labels row => (Code -> String -> result) -> Variant row -> result
+rejectWith = rejectionOf (Proxy :: Proxy labels)
+
+-- | The code and message of a handler's rejection.
+rejection :: forall row labels. RowToList row labels => Rejection labels row => Variant row -> ConnectError
+rejection = rejectWith \code message -> ConnectError { code, message }
 
 fromRejection :: Variant Rejections -> ConnectError
 fromRejection = match

@@ -178,8 +178,8 @@ take count (Strom source)
         before <- readIORef taken # liftIO
         writeIORef taken (before + 1) # liftIO
         more <- sink element
-        unless more (writeIORef sinkStopped true # liftIO)
-        pure (more && before + 1 < count)
+        if more then pure (before + 1 < count)
+        else (writeIORef sinkStopped true # liftIO) $> false
       stopped <- readIORef sinkStopped # liftIO
       pure (not stopped)
 
@@ -190,8 +190,8 @@ takeWhile keep (Strom source) = Strom \sink -> do
   _ <- source \element ->
     if keep element then do
       more <- sink element
-      unless more (writeIORef sinkStopped true # liftIO)
-      pure more
+      if more then pure true
+      else (writeIORef sinkStopped true # liftIO) $> false
     else pure false
   stopped <- readIORef sinkStopped # liftIO
   pure (not stopped)

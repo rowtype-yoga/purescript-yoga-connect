@@ -162,7 +162,7 @@ receiveAll call codec sink = receiveNext
         Right _ -> pure true
 
 sendTo :: forall ctx err request. Call -> Codec request -> request -> OmIO ctx err Boolean
-sendTo call codec request = IO (runEffectFn2 sendImpl call (Codec.encode codec request)) # liftIO
+sendTo call codec request = IO (Codec.encodeEffect codec request >>= runEffectFn2 sendImpl call) # liftIO
 
 decodeResponse :: forall ctx err response. Codec response -> Bytes -> OmIO ctx (Failing err) response
 decodeResponse codec bytes = case Codec.decode codec bytes of
