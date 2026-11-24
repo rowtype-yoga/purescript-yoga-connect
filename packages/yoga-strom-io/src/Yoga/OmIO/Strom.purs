@@ -69,6 +69,7 @@ module Yoga.OmIO.Strom
   , grouped
   , rechunk
   , catchAll
+  , mapError
   , orElse
   , retry
   , timeout
@@ -102,7 +103,7 @@ module Yoga.OmIO.Strom
 import Prelude
 
 import Control.Alt ((<|>))
-import Control.Monad.Error.Class (throwError, try)
+import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Reader (ask)
 import Data.Array as Array
 import Data.Either (Either(..), either)
@@ -669,6 +670,16 @@ catchAll recover stream = switchOnFailure recoverOnce stream
   recoverOnce _ failuresBefore failure
     | failuresBefore == 0 = pure (Just (recover failure))
     | otherwise = pure Nothing
+
+-- | Fails with what `change` makes of the stream's failure, as it's opened or pulled. Being
+-- | interrupted stays being interrupted.
+mapError :: forall ctx err a. (Failure err -> Failure err) -> Strom ctx err a -> Strom ctx err a
+mapError change stream = Strom \scope -> do
+  pull <- open scope stream `catchError` failChanged
+  pure (pull `catchError` failChanged)
+  where
+  failChanged :: forall b. Failure err -> OmIO ctx err b
+  failChanged failure = throwError (if isInterruption failure then failure else change failure)
 
 -- | If the stream fails, goes on with the other.
 orElse :: forall ctx err a. Strom ctx err a -> Strom ctx err a -> Strom ctx err a

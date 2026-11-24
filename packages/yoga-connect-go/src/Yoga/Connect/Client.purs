@@ -20,6 +20,7 @@ module Yoga.Connect.Client
   ( Connection
   , connect
   , client
+  , clientWithin
   , class ClientMethods
   , clientMethods
   , class ClientMethod
@@ -52,7 +53,7 @@ import Yoga.Go.HTTP.OmIO (OmIO, liftIO)
 import Yoga.OmIO.Strom (Exit(..), Scope, Step(..), Strom, addFinalizer, contextOf)
 import Yoga.OmIO.Strom as Strom
 import Yoga.OmIO.Strom.Context (Context, background)
-import Yoga.OmIO.Strom.Scope (throwIfInterrupted)
+import Yoga.OmIO.Strom.Scope (isInterruption, throwIfInterrupted)
 import Yoga.Protobuf.Bytes (Bytes)
 import Yoga.Protobuf.Codec (Codec)
 import Yoga.Protobuf.Codec as Codec
@@ -77,15 +78,35 @@ client
   => Service methods
   -> Connection
   -> Record clients
-client service connection = Builder.buildFromScratch (clientMethods (Proxy :: Proxy list) (Proxy :: Proxy ctx) (Proxy :: Proxy err) (methodsOf service) connection)
+client service connection = Builder.buildFromScratch (clientMethods (Proxy :: Proxy list) (Proxy :: Proxy ctx) (Proxy :: Proxy err) background (methodsOf service) connection)
+
+-- | `client`, whose unary and client-streaming calls are made within the context: cancelling it
+-- | cancels them, and its deadline is theirs, so that they fail with `DeadlineExceeded` once it
+-- | has passed.
+-- |
+-- | ```purescript
+-- | deadline /\ _ <- withTimeout (Milliseconds 500.0) background # liftIO
+-- | reply <- (clientWithin deadline greeter connection).sayHello { name: "Ada" }
+-- | ```
+-- |
+-- | A streamed response is made within the scope it's read in; `Strom.timeout` is its deadline.
+clientWithin
+  :: forall methods list ctx err clients
+   . RowToList methods list
+  => ClientMethods list methods ctx err clients
+  => Context
+  -> Service methods
+  -> Connection
+  -> Record clients
+clientWithin context service connection = Builder.buildFromScratch (clientMethods (Proxy :: Proxy list) (Proxy :: Proxy ctx) (Proxy :: Proxy err) context (methodsOf service) connection)
 
 type Failing err = (connectError :: ConnectError | err)
 
 class ClientMethods (list :: RowList Type) (methods :: Row Type) ctx (err :: Row Type) (clients :: Row Type) | list methods ctx err -> clients where
-  clientMethods :: Proxy list -> Proxy ctx -> Proxy err -> Record methods -> Connection -> Builder {} (Record clients)
+  clientMethods :: Proxy list -> Proxy ctx -> Proxy err -> Context -> Record methods -> Connection -> Builder {} (Record clients)
 
 instance ClientMethods RowList.Nil methods ctx err () where
-  clientMethods _ _ _ _ _ = identity
+  clientMethods _ _ _ _ _ _ = identity
 
 instance
   ( IsSymbol label
@@ -96,17 +117,17 @@ instance
   , Row.Lacks label otherClients
   ) =>
   ClientMethods (RowList.Cons label method tail) methods ctx err clients where
-  clientMethods _ context errors methods connection =
-    Builder.insert (Proxy :: Proxy label) (clientMethod context errors (Record.get (Proxy :: Proxy label) methods) connection)
-      <<< clientMethods (Proxy :: Proxy tail) context errors methods connection
+  clientMethods _ ctx errors context methods connection =
+    Builder.insert (Proxy :: Proxy label) (clientMethod ctx errors context (Record.get (Proxy :: Proxy label) methods) connection)
+      <<< clientMethods (Proxy :: Proxy tail) ctx errors context methods connection
 
--- | The function that calls one method, by its kind.
+-- | The function that calls one method, by its kind, within the context.
 class ClientMethod method ctx (err :: Row Type) function | method ctx err -> function where
-  clientMethod :: Proxy ctx -> Proxy err -> method -> Connection -> function
+  clientMethod :: Proxy ctx -> Proxy err -> Context -> method -> Connection -> function
 
 instance ClientMethod (Unary request response) ctx err (request -> OmIO ctx (Failing err) response) where
-  clientMethod _ _ (Unary method) connection request = do
-    reply <- IO (runEffectFn6 callUnaryImpl failedWith Right background connection method.procedure (Codec.encode method.request request)) # liftIO
+  clientMethod _ _ context (Unary method) connection request = do
+    reply <- IO (runEffectFn6 callUnaryImpl failedWith Right context connection method.procedure (Codec.encode method.request request)) # liftIO
     case reply of
       Left failure -> throwError (connectError failure)
       Right bytes -> decodeResponse method.response bytes
@@ -115,15 +136,20 @@ instance ClientMethod (Unary request response) ctx err (request -> OmIO ctx (Fai
 -- | done with the responses (`take` has enough, say), the call is cancelled, and the server's
 -- | stream is interrupted. A `Strom.timeout` around it is the call's deadline.
 instance ClientMethod (ServerStream request response) ctx err (request -> Strom ctx (Failing err) response) where
-  clientMethod _ _ (ServerStream method) connection request = Strom.fromPull \scope -> do
+  clientMethod _ _ _ (ServerStream method) connection request = Strom.fromPull \scope -> do
     call <- IO (runEffectFn4 openServerStreamImpl (contextOf scope) connection method.procedure (Codec.encode method.request request)) # liftIO
     _ <- addFinalizer scope \_ -> closeCall call
     pure (receiveNext scope call method.response)
 
+-- | The requests are read within the context too: once it's done, reading them stops and the call
+-- | fails as the server saw it end, with `DeadlineExceeded` or `Canceled`.
 instance ClientMethod (ClientStream request response) ctx err (Strom ctx (Failing err) request -> OmIO ctx (Failing err) response) where
-  clientMethod _ _ (ClientStream method) connection outgoing = do
-    call <- IO (runEffectFn3 openClientStreamImpl background connection method.procedure) # liftIO
-    outgoing # Strom.mapM (sendTo call method.request) # Strom.takeWhile identity # Strom.runDrain
+  clientMethod _ _ context (ClientStream method) connection outgoing = do
+    call <- IO (runEffectFn3 openClientStreamImpl context connection method.procedure) # liftIO
+    sent <- try (outgoing # Strom.mapM (sendTo call method.request) # Strom.takeWhile identity # Strom.forEachWithin context (\_ -> pure unit))
+    case sent of
+      Left failure | not (isInterruption failure) -> throwError failure
+      _ -> pure unit
     reply <- IO (runEffectFn3 closeAndReceiveImpl failedWith Right call) # liftIO
     case reply of
       Left failure -> throwError (connectError failure)
@@ -133,7 +159,7 @@ instance ClientMethod (ClientStream request response) ctx err (Strom ctx (Failin
 -- | the context of the scope the stream is opened in. If sending fails, the call is closed and the
 -- | failure is the stream's.
 instance ClientMethod (BidiStream request response) ctx err (Strom ctx (Failing err) request -> Strom ctx (Failing err) response) where
-  clientMethod _ _ (BidiStream method) connection outgoing = Strom.fromPull \scope -> do
+  clientMethod _ _ _ (BidiStream method) connection outgoing = Strom.fromPull \scope -> do
     call <- IO (runEffectFn3 openBidiStreamImpl (contextOf scope) connection method.procedure) # liftIO
     _ <- addFinalizer scope \_ -> closeCall call
     sendFailure <- newIORef Nothing # liftIO

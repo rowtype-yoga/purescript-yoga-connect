@@ -20,7 +20,10 @@ import Go.IO.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual, shouldSatisfy)
 import Type.Proxy (Proxy(..))
-import Yoga.Connect.Client (Connection, client, connect)
+import Data.DateTime.Instant (diff)
+import Effect.Now (now)
+import Go.IO.Context (background, cancel, withTimeout)
+import Yoga.Connect.Client (Connection, client, clientWithin, connect)
 import Yoga.Connect.Server (Host(..), Port(..), createServer, listen, reject, serveWith)
 import Yoga.Connect.Status (Code(..), ConnectError(..))
 import Yoga.Go.HTTP.OmIO (OmIO, liftIO, runOmIO)
@@ -58,6 +61,23 @@ spec = describe "a server and a client derived from the same service row" do
         # Strom.runCollect
     map Array.length received `shouldSatisfy` either (const false) (_ > 0)
     entriesAfterAWhile log >>= shouldEqual [ "listGreetings interrupted" ]
+
+  it "gives up a unary call at its context's deadline" do
+    { connection } <- startServer
+    started <- liftEffect now
+    outcome <- callWithin (Milliseconds 50.0) connection \greeterClient -> greeterClient.sayHello { name: "slow" }
+    finished <- liftEffect now
+    map _.message outcome `shouldEqual` Left (Just DeadlineExceeded)
+    (diff finished started :: Milliseconds) `shouldSatisfy` (_ < Milliseconds 1000.0)
+
+  it "gives up a client stream at its context's deadline, while it still has requests to send" do
+    { connection } <- startServer
+    started <- liftEffect now
+    outcome <- callWithin (Milliseconds 50.0) connection \greeterClient ->
+      greeterClient.greetEveryone (Strom.every (Milliseconds 1000.0) # Strom.take 5 # map \_ -> { name: "Ada" })
+    finished <- liftEffect now
+    map _.message outcome `shouldEqual` Left (Just DeadlineExceeded)
+    (diff finished started :: Milliseconds) `shouldSatisfy` (_ < Milliseconds 1000.0)
 
   it "ends a server stream the client reads to its end" do
     { connection, log } <- startServer
@@ -100,6 +120,22 @@ callWith connection calls = do
   describe = Variant.case_
     # Variant.on (Proxy :: Proxy "connectError") show
     # Variant.on (Proxy :: Proxy "exception") message
+
+-- | Runs the calls with a client whose context times out after the duration, and the code they
+-- | failed with, if they did.
+callWithin
+  :: forall a
+   . Milliseconds
+  -> Connection
+  -> ({ | GreeterClient } -> OmIO Unit (connectError :: ConnectError) a)
+  -> Aff (Either (Maybe Code) a)
+callWithin duration connection calls = toAff do
+  deadline /\ cancelDeadline <- withTimeout duration background
+  outcome <- runOmIO unit (calls (clientWithin deadline greeter connection))
+  cancel cancelDeadline
+  pure (lmap codeOf outcome)
+  where
+  codeOf = Variant.on (Proxy :: Proxy "connectError") (\(ConnectError { code }) -> Just code) (const Nothing)
 
 type Log = IORef (Array String)
 
@@ -156,6 +192,7 @@ type Context = { greeting :: String, log :: Log }
 sayHello :: HelloRequest -> OmIO Context (notFound :: String) HelloReply
 sayHello { name } = do
   { greeting } <- ask
+  when (name == "slow") (threadDelay (Milliseconds 2000.0) # liftIO)
   if name == "nobody" then reject @"notFound" "no one by that name"
   else pure { message: greeting <> ", " <> name }
 

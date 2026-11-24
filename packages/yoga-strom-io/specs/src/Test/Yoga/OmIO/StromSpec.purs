@@ -14,6 +14,7 @@ import Data.Variant as Variant
 import Effect.Aff (Aff)
 import Effect.Exception (message)
 import Go.IO (forkIO, threadDelay, toAff)
+import Go.IO.Chan (close, newBufferedChan, sendAll)
 import Go.IO.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (fail, shouldEqual, shouldSatisfy)
@@ -66,6 +67,13 @@ chunkSpec = describe "chunks" do
 
 combinatorSpec :: Spec Unit
 combinatorSpec = describe "making and changing streams" do
+  it "reads a channel until it's closed" do
+    channel <- toAff do
+      channel <- newBufferedChan 3
+      _ <- forkIO (sendAll channel [ 1, 2, 3 ] *> close channel)
+      pure channel
+    collected (Strom.fromChan channel) >>= shouldEqual [ 1, 2, 3 ]
+
   it "maps, filters and scans" do
     collected (Strom.range 1 11 # map (_ * 10) # Strom.filter (_ > 50) # Strom.scan (+) 0)
       >>= shouldEqual [ 60, 130, 210, 300, 400 ]
@@ -118,6 +126,11 @@ failureSpec = describe "typed failures" do
   it "hands the failure to catchAll" do
     collected (Strom.fail (boom "why") # Strom.catchAll (\failure -> Strom.succeed (describeFailure failure)))
       >>= shouldEqual [ "boom: why" ]
+
+  it "changes the failure with mapError, keeping what came before it" do
+    run (Strom.fromArray [ 1, 2 ] <> Strom.fail (boom "late") # Strom.mapError (\_ -> boom "changed") # Strom.runCollect)
+      >>= shouldEqual (Left "boom: changed")
+    collected (Strom.fromArray [ 1, 2 ] # Strom.mapError (\_ -> boom "never")) >>= shouldEqual [ 1, 2 ]
 
   it "goes on with another stream with orElse" do
     collected (Strom.fail (boom "no") # Strom.orElse (Strom.fromArray [ 7 ])) >>= shouldEqual [ 7 ]

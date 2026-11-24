@@ -103,6 +103,10 @@ A streaming call lives as long as its stream:
 - `Strom.timeout` around a client's stream is the call's deadline, and the server sees it.
 - When a client cancels or its deadline passes, the handler's stream is interrupted the same way.
 
+Unary and client-stream calls take theirs from a Go context: `clientWithin deadline greeter connection`
+makes them with one, say from go-io's `withTimeout`, and they fail with `DeadlineExceeded` once it
+passes. `client` makes them without a deadline.
+
 ```purescript
 listGreetings { name, count } = Strom.every (Milliseconds 20.0)
   # Strom.take count

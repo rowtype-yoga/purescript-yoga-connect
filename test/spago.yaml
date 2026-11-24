@@ -12,6 +12,7 @@ package:
     - go-io: "*"
     - greeter-proto: "*"
     - maybe: ">=6.0.1 <7.0.0"
+    - now: ">=6.0.1 <7.0.0"
     - prelude: ">=6.0.3 <7.0.0"
     - spec: ">=8.1.2 <9.0.0"
     - transformers: ">=6.1.1 <7.0.0"
