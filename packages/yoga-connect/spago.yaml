@@ -1,0 +1,15 @@
+package:
+  name: yoga-connect
+  description: Service types for gRPC and Connect, shared by the Go server and the browser client
+  dependencies:
+    - maybe
+    - prelude
+    - variant
+    - yoga-protobuf
+  publish:
+    version: 0.1.0
+    license: MIT
+    location:
+      githubOwner: rowtype-yoga
+      githubRepo: purescript-yoga-connect
+      subdir: packages/yoga-connect

@@ -1,0 +1,8 @@
+workspace:
+  extraPackages:
+    yoga-protobuf:
+      path: ../purescript-yoga-protobuf
+    go-io:
+      path: ../purescript-go-ws/packages/go-io
+    yoga-go-http-om:
+      path: ../yoga-go-http-om-ws-connect

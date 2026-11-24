@@ -1,0 +1,14 @@
+package:
+  name: greeter-server
+  description: The demo's gRPC server, compiled to Go with Iris
+  dependencies:
+    - datetime: ">=6.1.1 <7.0.0"
+    - effect: ">=4.0.1 <5.0.0"
+    - go-io: "*"
+    - greeter-proto: "*"
+    - prelude: ">=6.0.3 <7.0.0"
+    - strings: ">=6.1.0 <7.0.0"
+    - yoga-connect-go: "*"
+    - yoga-go-http-om: "*"
+  run:
+    main: Demo.Server

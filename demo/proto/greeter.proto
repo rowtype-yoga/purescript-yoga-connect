@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package greeter.v1;
+
+message HelloRequest {
+  string name = 1;
+}
+
+message HelloReply {
+  string message = 1;
+}
+
+message ListRequest {
+  string name = 1;
+  int32 count = 2;
+}
+
+message Greeting {
+  int32 index = 1;
+  string text = 2;
+}
+
+message ChatMessage {
+  string from = 1;
+  string text = 2;
+}
+
+service Greeter {
+  // One request, one reply.
+  rpc SayHello(HelloRequest) returns (HelloReply);
+  // `count` greetings, one after another.
+  rpc ListGreetings(ListRequest) returns (stream Greeting);
+  // Greets everyone sent, in one reply.
+  rpc GreetEveryone(stream HelloRequest) returns (HelloReply);
+  // Answers each message as it arrives.
+  rpc Chat(stream ChatMessage) returns (stream ChatMessage);
+}

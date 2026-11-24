@@ -1,0 +1,10 @@
+package:
+  name: greeter-proto
+  description: The demo's service, generated from demo/proto/greeter.proto by protoc-gen-purescript
+  dependencies:
+    - effect
+    - either
+    - functions
+    - prelude
+    - yoga-connect
+    - yoga-protobuf
