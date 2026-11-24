@@ -15,7 +15,7 @@ import Effect.Aff (Aff)
 import Effect.Exception (message)
 import Go.IO (forkIO, threadDelay, toAff)
 import Go.IO.Chan (close, newBufferedChan, sendAll)
-import Go.IO.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
+import Go.IO.IORef (IORef, atomicModifyIORef', modifyIORef, newIORef, readIORef)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (fail, shouldEqual, shouldSatisfy)
 import Type.Proxy (Proxy(..))
@@ -101,6 +101,19 @@ combinatorSpec = describe "making and changing streams" do
     log <- newLog
     _ <- run (Strom.range 1 4 # Strom.tap (\n -> record log (show n)) # Strom.runDrain)
     entriesOf log >>= shouldEqual [ "1", "2", "3" ]
+
+  it "sends each element to a sink that adds it to an IORef" do
+    total <- toAff do
+      sent <- newIORef 0
+      _ <- runOmIO unit (sendTripled \tripled -> modifyIORef sent (_ + tripled) # liftIO)
+      readIORef sent
+    total `shouldEqual` (Array.range 0 4999 <#> (_ * 3) # Array.foldl (+) 0)
+
+  it "keeps in an IORef what a sink added before it failed" do
+    sent <- newCounter
+    outcome <- run (Strom.range 0 10 # Strom.forEach \n -> if n == 5 then throwError (boom "five") else modifyIORef sent (_ + n) # liftIO)
+    outcome `shouldEqual` Left "boom: five"
+    countOf sent >>= shouldEqual 10
 
   it "folds, and reads the first and the last element" do
     run (Strom.range 1 101 # Strom.runFold 0 (+)) >>= shouldEqual (Right 5050)
@@ -318,6 +331,9 @@ leadsOfProducerOverSlowReader between = do
   readIORef leads # toAff
 
 -- Helpers
+
+sendTripled :: (Int -> Om Unit) -> Om Unit
+sendTripled send = Strom.range 0 10000 # map (_ * 3) # Strom.take 5000 # Strom.forEach send
 
 collected :: forall a. Stream a -> Aff (Array a)
 collected stream = run (Strom.runCollect stream) >>= case _ of
