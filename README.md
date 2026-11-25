@@ -158,6 +158,13 @@ greeterClient.listGreetings { name: "Grace", count: 1000 } # Strom.take 3 # Stro
 
 A browser client would be another package next to `yoga-connect-go`, derived from the same rows.
 
+## Examples
+
+[examples/ticker](examples/ticker): a live stock ticker. The server merges a price stream per
+symbol and fills trades over a bidi stream, turning bad ones down with `FAILED_PRECONDITION`; the
+client watches with a deadline and trades. Its README holds it up against the same server in
+grpc-go.
+
 ## Demo
 
 `demo/proto/greeter.proto` is generated into `demo/greeter`. The server and the client are

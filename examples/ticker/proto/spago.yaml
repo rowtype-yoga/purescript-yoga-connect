@@ -1,0 +1,10 @@
+package:
+  name: ticker-proto
+  description: The ticker's service, generated from ticker.proto by protoc-gen-purescript
+  dependencies:
+    - effect
+    - either
+    - functions
+    - prelude
+    - yoga-connect
+    - yoga-protobuf

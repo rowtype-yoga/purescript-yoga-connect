@@ -1,0 +1,27 @@
+package:
+  name: ticker
+  description: A live stock ticker over gRPC, compiled to Go with Iris. A server that streams
+    quotes and fills trades, and a client that watches and trades.
+  dependencies:
+    - arrays
+    - datetime
+    - effect
+    - either
+    - foldable-traversable
+    - go-io
+    - integers
+    - maybe
+    - numbers
+    - ordered-collections
+    - prelude
+    - strings
+    - ticker-proto
+    - tuples
+    - variant
+    - yoga-connect
+    - yoga-connect-go
+    - yoga-go-http-om
+    - yoga-strom-io
+workspace:
+  packageSet:
+    url: https://raw.githubusercontent.com/rowtype-yoga/purescript-go-package-sets/go-0.1.18-20261125/packages.json
