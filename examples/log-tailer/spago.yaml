@@ -1,0 +1,23 @@
+package:
+  name: log-tailer
+  dependencies:
+    - arrays
+    - datetime
+    - effect
+    - either
+    - foldable-traversable
+    - go-io
+    - integers
+    - maybe
+    - newtype
+    - now
+    - numbers
+    - prelude
+    - strings
+    - tuples
+    - variant
+    - yoga-go-http-om
+    - yoga-strom-io
+workspace:
+  packageSet:
+    url: https://raw.githubusercontent.com/rowtype-yoga/purescript-go-package-sets/go-0.1.18-20261125/packages.json

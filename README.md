@@ -150,6 +150,11 @@ listGreetings { name, count } = Strom.every (Milliseconds 20.0)
 greeterClient.listGreetings { name: "Grace", count: 1000 } # Strom.take 3 # Strom.forEach say
 ```
 
+[examples/log-tailer](examples/log-tailer) shows the streams without gRPC: three logs merged,
+parsed, cut into windows, looked up four at a time with `mapPar`, reopened with `catchAll` when one
+is rotated, and closed by their finalizers once `take` has enough. Next to it, the same program in
+plain Go.
+
 ## Packages
 
 - `yoga-connect`: the service types and status codes, for both sides and any backend
