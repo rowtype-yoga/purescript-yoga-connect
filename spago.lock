@@ -404,13 +404,17 @@
     },
     "extra_packages": {
       "go-io": {
-        "path": "../purescript-go-ws-readable/packages/go-io"
+        "git": "https://github.com/i-am-the-slime/purescript-go.git",
+        "ref": "v0.2.0",
+        "subdir": "packages/go-io"
       },
       "yoga-go-http-om": {
-        "path": "../yoga-go-http-om-ws-connect"
+        "git": "https://github.com/i-am-the-slime/purescript-yoga-go-http-om.git",
+        "ref": "v0.1.0"
       },
       "yoga-protobuf": {
-        "path": "../purescript-yoga-protobuf"
+        "git": "https://github.com/rowtype-yoga/purescript-yoga-protobuf.git",
+        "ref": "v0.1.0"
       }
     }
   },
@@ -796,8 +800,10 @@
       ]
     },
     "go-io": {
-      "type": "local",
-      "path": "../purescript-go-ws-readable/packages/go-io",
+      "type": "git",
+      "url": "https://github.com/i-am-the-slime/purescript-go.git",
+      "rev": "9d97993edc0e42166b1135e7a48e6fdb0890c47a",
+      "subdir": "packages/go-io",
       "dependencies": [
         "aff",
         "arrays",
@@ -1418,8 +1424,9 @@
       ]
     },
     "yoga-go-http-om": {
-      "type": "local",
-      "path": "../yoga-go-http-om-ws-connect",
+      "type": "git",
+      "url": "https://github.com/i-am-the-slime/purescript-yoga-go-http-om.git",
+      "rev": "09bc7a0db57a7f5381a2d65909cfecf83b2dd71e",
       "dependencies": [
         "aff",
         "arrays",
@@ -1590,8 +1597,9 @@
       ]
     },
     "yoga-protobuf": {
-      "type": "local",
-      "path": "../purescript-yoga-protobuf",
+      "type": "git",
+      "url": "https://github.com/rowtype-yoga/purescript-yoga-protobuf.git",
+      "rev": "48089a9feeb8cdfcdc6a86e61a16da61b5fd2f51",
       "dependencies": [
         "arrays",
         "effect",

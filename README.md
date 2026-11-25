@@ -30,6 +30,40 @@ greeter :: Connect.Service Greeter
 `greeter` carries each method's route and message codecs. The messages are plain records, so
 the codecs travel as a value rather than as instances.
 
+## Installing
+
+None of it is on the registry yet, so it all comes from GitHub. In your `spago.yaml`:
+
+```yaml
+workspace:
+  extraPackages:
+    yoga-connect:
+      git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
+      ref: v0.1.0
+      subdir: packages/yoga-connect
+    yoga-connect-go:
+      git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
+      ref: v0.1.0
+      subdir: packages/yoga-connect-go
+    yoga-strom-io:
+      git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
+      ref: v0.1.0
+      subdir: packages/yoga-strom-io
+    yoga-protobuf:
+      git: https://github.com/rowtype-yoga/purescript-yoga-protobuf.git
+      ref: v0.1.0
+    yoga-go-http-om:
+      git: https://github.com/i-am-the-slime/purescript-yoga-go-http-om.git
+      ref: v0.1.0
+    go-io:
+      git: https://github.com/i-am-the-slime/purescript-go.git
+      ref: v0.2.0
+      subdir: packages/go-io
+```
+
+You need Iris 0.1.18-go.2 or newer (`brew install spago i-am-the-slime/tap/iris`) and Go 1.27.
+`protoc-gen-purescript` comes with yoga-protobuf, its README says how to build it.
+
 ## Server
 
 ```purescript
