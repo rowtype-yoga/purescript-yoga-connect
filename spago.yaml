@@ -8,5 +8,5 @@ workspace:
       ref: v0.2.0
       subdir: packages/go-io
     yoga-go-http-om:
-      git: https://github.com/i-am-the-slime/purescript-yoga-go-http-om.git
-      ref: v0.1.0
+      git: https://github.com/rowtype-yoga/purescript-yoga-go-http-om.git
+      ref: v0.1.1

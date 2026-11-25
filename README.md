@@ -39,22 +39,22 @@ workspace:
   extraPackages:
     yoga-connect:
       git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
-      ref: v0.1.0
+      ref: v0.1.1
       subdir: packages/yoga-connect
     yoga-connect-go:
       git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
-      ref: v0.1.0
+      ref: v0.1.1
       subdir: packages/yoga-connect-go
     yoga-strom-io:
       git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
-      ref: v0.1.0
+      ref: v0.1.1
       subdir: packages/yoga-strom-io
     yoga-protobuf:
       git: https://github.com/rowtype-yoga/purescript-yoga-protobuf.git
       ref: v0.1.0
     yoga-go-http-om:
-      git: https://github.com/i-am-the-slime/purescript-yoga-go-http-om.git
-      ref: v0.1.0
+      git: https://github.com/rowtype-yoga/purescript-yoga-go-http-om.git
+      ref: v0.1.1
     go-io:
       git: https://github.com/i-am-the-slime/purescript-go.git
       ref: v0.2.0
