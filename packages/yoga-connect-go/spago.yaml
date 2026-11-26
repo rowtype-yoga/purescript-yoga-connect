@@ -21,7 +21,7 @@ package:
     - yoga-protobuf: "*"
     - yoga-strom-io: "*"
   publish:
-    version: 0.3.0
+    version: 0.3.1
     license: MIT
     location:
       githubOwner: rowtype-yoga
