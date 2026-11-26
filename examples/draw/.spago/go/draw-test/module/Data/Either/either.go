@@ -39,6 +39,17 @@ const (
 	EitherSeenRight
 )
 
+type EitherString struct {
+	Left  exception.Error
+	Right string
+	Tag   uint8
+}
+
+const (
+	EitherStringLeft = iota
+	EitherStringRight
+)
+
 type EitherUnit struct {
 	Right struct{}
 	Left  exception.Error
@@ -65,17 +76,6 @@ type EitherFnUnit struct {
 const (
 	EitherFnUnitLeft = iota
 	EitherFnUnitRight
-)
-
-type EitherString struct {
-	Left  exception.Error
-	Right string
-	Tag   uint8
-}
-
-const (
-	EitherStringLeft = iota
-	EitherStringRight
 )
 
 type EitherInt struct {
@@ -114,20 +114,20 @@ func LeftEitherSeen(left exception.Error) EitherSeen {
 	return EitherSeen{Tag: EitherSeenLeft, Left: left}
 }
 
-func LeftEitherUnit(left exception.Error) EitherUnit {
-	return EitherUnit{Tag: EitherUnitLeft, Left: left}
-}
-
-func RightEitherUnit(right struct{}) EitherUnit {
-	return EitherUnit{Tag: EitherUnitRight, Right: right}
-}
-
 func RightEitherString(right string) EitherString {
 	return EitherString{Tag: EitherStringRight, Right: right}
 }
 
 func LeftEitherString(left exception.Error) EitherString {
 	return EitherString{Tag: EitherStringLeft, Left: left}
+}
+
+func LeftEitherUnit(left exception.Error) EitherUnit {
+	return EitherUnit{Tag: EitherUnitLeft, Left: left}
+}
+
+func RightEitherUnit(right struct{}) EitherUnit {
+	return EitherUnit{Tag: EitherUnitRight, Right: right}
 }
 
 func LeftEitherVoid(left string) *EitherVoid {

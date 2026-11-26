@@ -37,7 +37,7 @@ func main() {
 //line ../../../p/aff-8.0.0/src/Effect/Aff.purs:229:12
 	fiber := aff.NewFiber(func() struct{} {
 //line ../../../p/prelude-6.0.2/src/Data/Function.purs:49:13
-		runner.EvalSpecT(config.DefaultConfig, []*event_internal.Proxy{console.ConsoleReporter}, tree.TupleUnit{First: struct{}{}, Second: []*tree.TreeStringFnUnitAffUnit{tree.NodeTreeStringFnUnitAffUnit(either.LeftEitherFnUnitAffUnit("the shared canvas"), []*tree.TreeStringFnUnitAffUnit{tree.LeafTreeStringFnUnitAffUnit("shows bob what ada drew, and ada what bob drew", tree.JustItem(tree.Item{IsParallelizable: maybe.NoBoolean, IsFocused: false, Example: func(around_ func(func(struct{}))) {
+		runner.EvalSpecT(config.DefaultConfig, []*event_internal.Proxy{console.ConsoleReporter}, tree.TupleUnit{First: struct{}{}, Second: []*tree.TreeStringFnUnitAffUnit{tree.NodeTreeStringFnUnitAffUnit(either.LeftEitherFnUnitAffUnit("the shared canvas"), array.Append([]*tree.TreeStringFnUnitAffUnit{tree.LeafTreeStringFnUnitAffUnit("shows bob what ada drew, and ada what bob drew", tree.JustItem(tree.Item{IsParallelizable: maybe.NoBoolean, IsFocused: false, Example: func(around_ func(func(struct{}))) {
 //line ../../../p/spec-8.1.2/src/Test/Spec.purs:147:31
 			around_(func(_ struct{}) {
 //line ../../../../specs/src/Test/Main.purs:32:9
@@ -49,9 +49,9 @@ func main() {
 					settle()
 					drag(bob, []tuple.TupleInt{{First: 0, Second: 3}})
 					settle()
-//line ../../../../specs/src/Test/Main.purs:70:19
+//line ../../../../specs/src/Test/Main.purs:81:19
 					s := bubbletea.LastFrameImpl(ada)
-//line ../../../../specs/src/Test/Main.purs:70:19
+//line ../../../../specs/src/Test/Main.purs:81:19
 					s2 := bubbletea.LastFrameImpl(bob)
 //line ../../../../specs/src/Test/Main.purs:42:11
 					return shared.Seen{ByAda: bubbletea.StripAnsi(s), ByBob: bubbletea.StripAnsi(s2)}
@@ -74,7 +74,7 @@ func main() {
 					})
 					return effectaff.NonCanceler
 				})
-//line ../../../../specs/src/Test/Main.purs:73:20
+//line ../../../../specs/src/Test/Main.purs:84:20
 				elements := strings.Split(seen.ByBob, "\n")
 //line ../../../p/prelude-6.0.2/src/Data/Function.purs:75:20
 				var v1 string
@@ -90,7 +90,7 @@ func main() {
 //line ../../../p/prelude-6.0.2/src/Data/Function.purs:49:13
 					effectaff.ThrowError(exception.NewError(prim.ShowString(v1) + " ≠ " + prim.ShowString("  ███")))
 				}
-//line ../../../../specs/src/Test/Main.purs:73:20
+//line ../../../../specs/src/Test/Main.purs:84:20
 				elements2 := strings.Split(seen.ByBob, "\n")
 //line ../../../p/prelude-6.0.2/src/Data/Function.purs:75:20
 				var v12 string
@@ -106,7 +106,7 @@ func main() {
 //line ../../../p/prelude-6.0.2/src/Data/Function.purs:49:13
 					effectaff.ThrowError(exception.NewError(prim.ShowString(v12) + " ≠ " + prim.ShowString("█    ")))
 				}
-//line ../../../../specs/src/Test/Main.purs:73:20
+//line ../../../../specs/src/Test/Main.purs:84:20
 				elements3 := strings.Split(seen.ByAda, "\n")
 //line ../../../p/prelude-6.0.2/src/Data/Function.purs:75:20
 				var v13 string
@@ -123,7 +123,58 @@ func main() {
 					effectaff.ThrowError(exception.NewError(prim.ShowString(v13) + " ≠ " + prim.ShowString("█    ")))
 				}
 			})
-		}}))})}})
+		}}))}, []*tree.TreeStringFnUnitAffUnit{tree.LeafTreeStringFnUnitAffUnit("shows a client that hasn't painted yet what's on the canvas", tree.JustItem(tree.Item{IsParallelizable: maybe.NoBoolean, IsFocused: false, Example: func(around_ func(func(struct{}))) {
+//line ../../../p/spec-8.1.2/src/Test/Spec.purs:147:31
+			around_(func(_ struct{}) {
+//line ../../../../specs/src/Test/Main.purs:48:9
+				address := startCanvas()
+				action := func() string {
+					ada := clientOn(address)
+					drag(ada, []tuple.TupleInt{{First: 1, Second: 0}, {First: 2, Second: 0}})
+					settle()
+					cleo := clientOn(address)
+					settle()
+//line ../../../../specs/src/Test/Main.purs:81:19
+					s := bubbletea.LastFrameImpl(cleo)
+//line ../../../p/prelude-6.0.2/src/Control/Monad.purs:86:3
+					return bubbletea.StripAnsi(s)
+				}
+//line ../../../p/go-io/30228bf274081dcb730b5238c1c00f3fc2363c4c/packages/go-io/src/Go/IO.purs:90:1
+				seenByCleo := aff.MakeAffDirect(func(value either.EitherString) bool {
+					return value.Tag == either.EitherStringLeft
+				}, func(value either.EitherString) exception.Error {
+					return value.Left
+				}, func(value either.EitherString) string {
+					return value.Right
+				}, func(resolve func(either.EitherString)) func(exception.Error) {
+//line ../../../p/go-io/30228bf274081dcb730b5238c1c00f3fc2363c4c/packages/go-io/src/Go/IO.purs:90:36
+					io.ToAffImpl(action, func(x string) {
+//line ../../../p/prelude-6.0.2/src/Control/Semigroupoid.purs:17:19
+						resolve(either.RightEitherString(x))
+					}, func(x exception.Error) {
+//line ../../../p/prelude-6.0.2/src/Control/Semigroupoid.purs:17:19
+						resolve(either.LeftEitherString(x))
+					})
+					return effectaff.NonCanceler
+				})
+//line ../../../../specs/src/Test/Main.purs:84:20
+				elements := strings.Split(seenByCleo, "\n")
+//line ../../../p/prelude-6.0.2/src/Data/Function.purs:75:20
+				var v1 string
+//line ../../../p/prelude-6.0.2/src/Data/Function.purs:75:20
+				if len(elements) > 0 {
+//line ../../../p/prelude-6.0.2/src/Data/Function.purs:75:20
+					v1 = elements[0]
+				} else {
+					v1 = ""
+				}
+//line ../../../p/spec-8.1.2/src/Test/Spec/Assertions.purs:50:3
+				if v1 != " ██" {
+//line ../../../p/prelude-6.0.2/src/Data/Function.purs:49:13
+					effectaff.ThrowError(exception.NewError(prim.ShowString(v1) + " ≠ " + prim.ShowString(" ██")))
+				}
+			})
+		}}))}))}})
 		return struct{}{}
 	})
 //line ../../../p/aff-8.0.0/src/Effect/Aff.purs:229:12
@@ -140,9 +191,9 @@ func main() {
 	run()
 }
 
-//line ../../../../specs/src/Test/Main.purs:49:1
+//line ../../../../specs/src/Test/Main.purs:60:1
 func startCanvas() string {
-//line ../../../../specs/src/Test/Main.purs:49:1
+//line ../../../../specs/src/Test/Main.purs:60:1
 	return aff.MakeAffDirect(func(value either.EitherString) bool {
 		return value.Tag == either.EitherStringLeft
 	}, func(value either.EitherString) exception.Error {
@@ -152,11 +203,11 @@ func startCanvas() string {
 	}, func(resolve func(either.EitherString)) func(exception.Error) {
 //line ../../../p/go-io/30228bf274081dcb730b5238c1c00f3fc2363c4c/packages/go-io/src/Go/IO.purs:90:36
 		io.ToAffImpl(func() string {
-//line ../../../../specs/src/Test/Main.purs:50:3
+//line ../../../../specs/src/Test/Main.purs:61:3
 			room := server.NewRoom()
 //line ../../../../src/Draw/Server.purs:31:13
 			server2 := internalffi.LiftEffectImpl(func() serverffi.Server {
-//line ../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Server.purs:81:16
+//line ../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Server.purs:81:16
 				return serverffi.CreateServerImpl()
 			})
 //line ../../../../src/Draw/Server.purs:32:3
@@ -168,7 +219,7 @@ func startCanvas() string {
 //line ../../../../src/Draw/Server.purs:33:3
 			scrutinee := shared.ListenOptions{Host: "127.0.0.1", Port: 0}
 			host := scrutinee.Host
-//line ../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Server.purs:112:16
+//line ../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Server.purs:112:16
 			bound2 := serverffi.ListenImpl(either.LeftEitherInt, either.RightEitherInt, host, scrutinee.Port, server2)
 			var bound serverffi2.BoundAddress
 			switch bound2.Tag {
@@ -178,7 +229,7 @@ func startCanvas() string {
 			default: // either.EitherIntRight
 				bound = serverffi2.BoundAddress{Address: host, Port: bound2.Right}
 			}
-//line ../../../../specs/src/Test/Main.purs:52:3
+//line ../../../../specs/src/Test/Main.purs:63:3
 			return "http://127.0.0.1:" + strconv.Itoa(bound.Port)
 		}, func(x string) {
 //line ../../../p/prelude-6.0.2/src/Control/Semigroupoid.purs:17:19
@@ -282,9 +333,9 @@ func clientOn(address string) bubbletea.NativeRunning[tea.Snapshot] {
 	}, view)
 }
 
-//line ../../../../specs/src/Test/Main.purs:63:3
+//line ../../../../specs/src/Test/Main.purs:74:3
 func drag(running bubbletea.NativeRunning[tea.Snapshot], spots []tuple.TupleInt) {
-//line ../../../../specs/src/Test/Main.purs:63:3
+//line ../../../../specs/src/Test/Main.purs:74:3
 	if len(spots) > 0 {
 //line ../../../p/foldable-traversable-6.0.0/src/Data/Foldable.purs:140:24
 		dragMouse(running, tea.MouseActionClick, spots[0])
@@ -303,9 +354,9 @@ func drag(running bubbletea.NativeRunning[tea.Snapshot], spots []tuple.TupleInt)
 	}
 }
 
-//line ../../../../specs/src/Test/Main.purs:77:10
+//line ../../../../specs/src/Test/Main.purs:88:10
 func settle() {
-//line ../../../../specs/src/Test/Main.purs:77:10
+//line ../../../../specs/src/Test/Main.purs:88:10
 	io.ThreadDelayImpl(150.0)
 }
 
@@ -317,8 +368,8 @@ func clientOnDrain(env hooks.Env) bubbletea.Cmd[hooks.ActionUnit] {
 	return bubbletea.BatchImpl(array)
 }
 
-//line ../../../../specs/src/Test/Main.purs:67:27
+//line ../../../../specs/src/Test/Main.purs:78:27
 func dragMouse(running bubbletea.NativeRunning[tea.Snapshot], action tea.MouseAction, tuple tuple.TupleInt) {
-//line ../../../../specs/src/Test/Main.purs:67:27
+//line ../../../../specs/src/Test/Main.purs:78:27
 	bubbletea.SendNativeImpl(running, tea.ToNative(tea.Mouse(tea.MouseEvent{X: tuple.First, Y: tuple.Second, Button: tea.MouseButtonLeftButton, Action: action, Ctrl: false, Alt: false, Shift: false})))
 }

@@ -74,9 +74,9 @@ func Open(open0 int, open1 []Registered) Finalizers {
 
 var Interrupted status.VariantConnectErrorException = status.Exception(scope.Interruption)
 
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:109:31
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:109:31
 func NewScope(parentContext context.Context) Scope {
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:109:31
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:109:31
 	tuple2 := context.WithCancelImpl(func(context2 context.Context) func(context.CancelContext) tuple.TupleContext {
 		return func(cancelContext context.CancelContext) tuple.TupleContext {
 			return tuple.TupleContext{First: context2, Second: cancelContext}
@@ -88,9 +88,9 @@ func NewScope(parentContext context.Context) Scope {
 	return Scope{Context: tuple2.First, CancelContext: tuple2.Second, Finalizers: finalizers, DetachFromParent: detachFromParent}
 }
 
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:164:12
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:164:12
 func CloseScope(exit Exit, scope Scope, r struct{}) (struct{}, status.VariantConnectErrorExceptionFailure) {
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:164:12
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:164:12
 	finalizers := ioref.AtomicModifyIORefImpl(Fst, Snd, func(state Finalizers) Tuple {
 		return Tuple{First: Finalizers{Tag: FinalizersClosed}, Second: state}
 	}, scope.Finalizers)
@@ -99,14 +99,14 @@ func CloseScope(exit Exit, scope Scope, r struct{}) (struct{}, status.VariantCon
 	case FinalizersClosed:
 		return struct{}{}, status.VariantConnectErrorExceptionFailure{}
 	default: // FinalizersOpen
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:168:7
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:168:7
 		context.CancelImpl(scope.CancelContext)
 		effect := scope.DetachFromParent.Load()
 //line ../../../../../p/either-6.1.0/src/Data/Either.purs:209:1
 		effect()
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:171:24
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:171:24
 		elements := array.Reverse(finalizers.Open1)
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:171:24
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:171:24
 		array_, err := CloseScopeFrom(exit, r, elements, 0, []status.EitherVariantConnectErrorExceptionUnit{})
 //line ../../../../../p/either-6.1.0/src/Data/Either.purs:209:1
 		if err.Failed {
@@ -151,22 +151,22 @@ func CloseScopeFrom(exit Exit, r struct{}, elements []Registered, index int, fie
 		rCaptured := r
 		if index < len(elements) {
 			scrutinee := elements[index]
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
 			either3, err := internal.CatchResultsImpl(func(x exception.Error) (status.EitherVariantConnectErrorExceptionUnit, either.ErrorFailure) {
 				return status.EitherVariantConnectErrorExceptionUnit{}, either.ErrorFailure{Failed: true, Left: x}
 			}, func() (status.EitherVariantConnectErrorExceptionUnit, either.ErrorFailure) {
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:22
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:22
 				either2 := scrutinee.Second(exitCaptured, rCaptured)
 				return either2, either.ErrorFailure{}
 			})
 			var result status.EitherVariantConnectErrorExceptionUnit
 			if err.Failed {
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
 				result = status.LeftEitherVariantConnectErrorExceptionUnit(status.Exception(err.Left))
 			} else {
 				result = either3
 			}
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
 			exit, r, index, field0 = exitCaptured, rCaptured, index+1, append(field0, result)
 			continue
 		}

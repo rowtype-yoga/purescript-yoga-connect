@@ -51,7 +51,7 @@
     },
     "package_set": {
       "address": {
-        "url": "https://raw.githubusercontent.com/rowtype-yoga/purescript-go-package-sets/go-0.1.18-20261126.6/packages.json"
+        "url": "https://raw.githubusercontent.com/rowtype-yoga/purescript-go-package-sets/go-0.1.18-20261126.7/packages.json"
       },
       "compiler": ">=0.15.15 <0.16.0",
       "content": {
@@ -303,7 +303,7 @@
         "variant": "8.0.0",
         "yoga-connect": {
           "git": "https://github.com/rowtype-yoga/purescript-yoga-connect.git",
-          "ref": "v0.3.0",
+          "ref": "v0.3.1",
           "subdir": "packages/yoga-connect",
           "dependencies": [
             "arrays",
@@ -325,7 +325,7 @@
         },
         "yoga-connect-go": {
           "git": "https://github.com/rowtype-yoga/purescript-yoga-connect.git",
-          "ref": "v0.3.0",
+          "ref": "v0.3.1",
           "subdir": "packages/yoga-connect-go",
           "dependencies": [
             "arrays",
@@ -568,7 +568,7 @@
         },
         "yoga-strom-io": {
           "git": "https://github.com/rowtype-yoga/purescript-yoga-connect.git",
-          "ref": "v0.3.0",
+          "ref": "v0.3.1",
           "subdir": "packages/yoga-strom-io",
           "dependencies": [
             "arrays",
@@ -1634,7 +1634,7 @@
     "yoga-connect": {
       "type": "git",
       "url": "https://github.com/rowtype-yoga/purescript-yoga-connect.git",
-      "rev": "098ab498b3d32cd8ff19c1fcf1292bad04856cb3",
+      "rev": "9008eae956dc0dfcad5be9f47da59248dc854086",
       "subdir": "packages/yoga-connect",
       "dependencies": [
         "arrays",
@@ -1657,7 +1657,7 @@
     "yoga-connect-go": {
       "type": "git",
       "url": "https://github.com/rowtype-yoga/purescript-yoga-connect.git",
-      "rev": "098ab498b3d32cd8ff19c1fcf1292bad04856cb3",
+      "rev": "9008eae956dc0dfcad5be9f47da59248dc854086",
       "subdir": "packages/yoga-connect-go",
       "dependencies": [
         "arrays",
@@ -1879,7 +1879,7 @@
     "yoga-strom-io": {
       "type": "git",
       "url": "https://github.com/rowtype-yoga/purescript-yoga-connect.git",
-      "rev": "098ab498b3d32cd8ff19c1fcf1292bad04856cb3",
+      "rev": "9008eae956dc0dfcad5be9f47da59248dc854086",
       "subdir": "packages/yoga-strom-io",
       "dependencies": [
         "arrays",

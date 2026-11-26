@@ -155,16 +155,16 @@ func DrawAlong(address string, mine chanffi.Chan[tuple.TupleInt], theirs chanffi
 //line ../../../../../../src/Draw/Client.purs:49:17
 		return clientffi.ConnectImpl(address)
 	})
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:91:12
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:91:12
 	scope := scope_status.NewScope(outside)
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
 	either3, err2 := internalffi.CatchResultsImpl(func(x exception.Error) (om.EitherVariantConnectErrorExceptionUnit, either.ErrorFailure) {
 		return om.EitherVariantConnectErrorExceptionUnit{}, either.ErrorFailure{Failed: true, Left: x}
 	}, func() (om.EitherVariantConnectErrorExceptionUnit, either.ErrorFailure) {
 //line ../../../../../p/transformers-6.1.0/src/Control/Monad/Reader/Trans.purs:70:5
 		f, err := client.Client(connection).Draw(func(scope2 scope_status.Scope, _ struct{}) (func(struct{}) (strom.StepXY, om.VariantConnectErrorExceptionFailure), om.VariantConnectErrorExceptionFailure) {
 			x := func() maybe_tuple.MaybeMaybeTupleIntInt {
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:225:15
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:225:15
 				return selectffi.Select2Impl(selectffi.OnReceiveImpl(chanffi.ReceiveEndImpl(mine), func(value tuple.TupleInt, open bool) maybe_tuple.MaybeMaybeTupleIntInt {
 //line ../../../../../p/go-io/30228bf274081dcb730b5238c1c00f3fc2363c4c/packages/go-io/src/Go/IO/Select.purs:43:49
 					var result maybe_tuple.MaybeTupleIntInt
@@ -214,7 +214,7 @@ func DrawAlong(address string, mine chanffi.Chan[tuple.TupleInt], theirs chanffi
 	})
 	var field om.EitherVariantConnectErrorExceptionUnit
 	if err2.Failed {
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
 		field = om.LeftEitherVariantConnectErrorExceptionUnit(om.Exception(err2.Left))
 	} else {
 		field = either3
@@ -222,11 +222,11 @@ func DrawAlong(address string, mine chanffi.Chan[tuple.TupleInt], theirs chanffi
 //line ../../../../../p/either-6.1.0/src/Data/Either.purs:209:1
 	switch field.Tag {
 	case om.EitherVariantConnectErrorExceptionUnitRight:
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
 		either4, err := internalffi.CatchResultsImpl(func(x exception.Error) (om.EitherVariantConnectErrorExceptionUnit, either.ErrorFailure) {
 			return om.EitherVariantConnectErrorExceptionUnit{}, either.ErrorFailure{Failed: true, Left: x}
 		}, func() (om.EitherVariantConnectErrorExceptionUnit, either.ErrorFailure) {
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:22
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:22
 			either2 := om.EitherVariantConnectErrorExceptionUnitFromResults(scope_status.CloseScope(scope_status.Exit{Tag: scope_status.ExitEnded}, scope, struct{}{}))
 			return either2, either.ErrorFailure{}
 		})
@@ -236,7 +236,7 @@ func DrawAlong(address string, mine chanffi.Chan[tuple.TupleInt], theirs chanffi
 		default: // om.EitherVariantConnectErrorExceptionUnitRight
 			var result om.EitherVariantConnectErrorExceptionUnit
 			if err.Failed {
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
 				result = om.LeftEitherVariantConnectErrorExceptionUnit(om.Exception(err.Left))
 			} else {
 				result = either4
@@ -250,29 +250,29 @@ func DrawAlong(address string, mine chanffi.Chan[tuple.TupleInt], theirs chanffi
 		}
 	default: // om.EitherVariantConnectErrorExceptionUnitLeft
 		failure := field.Left
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
 		boolean := context.IsCancelledImpl(scope.Context)
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
 		either4, err := internalffi.CatchResultsImpl(func(x exception.Error) (om.EitherVariantConnectErrorExceptionUnit, either.ErrorFailure) {
 			return om.EitherVariantConnectErrorExceptionUnit{}, either.ErrorFailure{Failed: true, Left: x}
 		}, func() (om.EitherVariantConnectErrorExceptionUnit, either.ErrorFailure) {
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 			var result bool
 			switch failure.Tag {
 			case om.VariantConnectErrorExceptionConnectError:
 				result = false
 			default: // om.VariantConnectErrorExceptionException
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
 				result = exception.Message(failure.Exception) == "the stream was interrupted"
 			}
 			var result2 scope_status.Exit
 			if boolean || result {
 				result2 = scope_status.Exit{Tag: scope_status.ExitInterrupted}
 			} else {
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 				result2 = scope_status.Failed(failure)
 			}
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 			either2 := om.EitherVariantConnectErrorExceptionUnitFromResults(scope_status.CloseScope(result2, scope, struct{}{}))
 			return either2, either.ErrorFailure{}
 		})
@@ -282,7 +282,7 @@ func DrawAlong(address string, mine chanffi.Chan[tuple.TupleInt], theirs chanffi
 		default: // om.EitherVariantConnectErrorExceptionUnitRight
 			var result om.EitherVariantConnectErrorExceptionUnit
 			if err.Failed {
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
 				result = om.LeftEitherVariantConnectErrorExceptionUnit(om.Exception(err.Left))
 			} else {
 				result = either4
@@ -300,9 +300,9 @@ func DrawAlong(address string, mine chanffi.Chan[tuple.TupleInt], theirs chanffi
 //line ../../../../../p/transformers-6.1.0/src/Control/Monad/Reader/Trans.purs:70:5
 func FoldPulledStepFF(c chanffi.Chan[tuple.TupleInt], scope scope_status.Scope, pull func(struct{}) (strom.StepXY, om.VariantConnectErrorExceptionFailure), accumulated struct{}, r struct{}) (struct{}, om.VariantConnectErrorExceptionFailure) {
 	for {
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
 		context2 := scope.Context
-//line ../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
+//line ../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
 		boolean := context.IsCancelledImpl(context2)
 //line ../../../../../p/either-6.1.0/src/Data/Either.purs:209:1
 		if boolean {

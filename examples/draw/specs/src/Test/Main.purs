@@ -44,6 +44,17 @@ main = launchAff_ do
         lineOf 3 seen.byBob `shouldEqual` "█    "
         lineOf 3 seen.byAda `shouldEqual` "█    "
 
+      it "shows a client that hasn't painted yet what's on the canvas" do
+        address <- startCanvas
+        seenByCleo <- toAff do
+          ada <- clientOn address
+          drag ada [ 1 /\ 0, 2 /\ 0 ]
+          settle
+          cleo <- clientOn address
+          settle
+          frameOf cleo
+        lineOf 0 seenByCleo `shouldEqual` " ██"
+
 -- | A canvas server on a free port.
 startCanvas :: Aff String
 startCanvas = toAff do

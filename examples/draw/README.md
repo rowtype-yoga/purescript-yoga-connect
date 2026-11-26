@@ -23,8 +23,7 @@ googoo run -p draw --main Draw.Client
 googoo run -p draw --main Draw.Client
 ```
 
-Drag in one and watch it appear in the other. `q` quits. A client that just started shows the
-canvas once you've painted your first cell.
+Drag in one and watch it appear in the other. `q` quits.
 
 ## How it works
 

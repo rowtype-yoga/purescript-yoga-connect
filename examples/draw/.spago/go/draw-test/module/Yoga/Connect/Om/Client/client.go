@@ -119,66 +119,66 @@ func LeftEitherStepBoolean(left status.VariantConnectErrorException) EitherStepB
 	return EitherStepBoolean{Tag: EitherStepBooleanLeft, Left: left}
 }
 
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Om/Client.purs:94:100
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Om/Client.purs:94:100
 func Client(connection clientffi.Connection) Draw {
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Om/Client.purs:94:100
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Om/Client.purs:94:100
 	procedure := prim.Concat("/draw.v1.Canvas/", prim.StringToUpper(prim.CodeUnitTake(1, "draw")), prim.CodeUnitDrop(1, "draw"))
 	exitRecordConnectError := scope_status.Exit{Tag: scope_status.ExitInterrupted}
 	return Draw{Draw: func(requests func(scope_status.Scope, struct{}) (func(struct{}) (strom.StepXY, status.VariantConnectErrorExceptionFailure), status.VariantConnectErrorExceptionFailure)) func(scope_status.Scope, struct{}) (func(struct{}) (strom.StepXY, status.VariantConnectErrorExceptionFailure), status.VariantConnectErrorExceptionFailure) {
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Om/Client.purs:156:42
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Om/Client.purs:156:42
 		method := Method{Procedure: procedure, Request: protobuf.MessageCodec(proxy.ProxyProxy), Response: protobuf.MessageCodec(proxy.ProxyProxy)}
 		return func(scope scope_status.Scope, r struct{}) (func(struct{}) (strom.StepXY, status.VariantConnectErrorExceptionFailure), status.VariantConnectErrorExceptionFailure) {
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:164:17
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:164:17
 			call := clientffi.OpenBidiStreamImpl(scope.Context, connection, method.Procedure)
 //line ../../../../../../../p/transformers-6.1.0/src/Control/Monad/Reader/Trans.purs:70:5
 			_, err := AddFinalizer(scope, func(_ scope_status.Exit, _ struct{}) status.EitherVariantConnectErrorExceptionUnit {
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:204:22
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:204:22
 				clientffi.CloseImpl(call)
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:204:22
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:204:22
 				return status.RightEitherVariantConnectErrorExceptionUnit(struct{}{})
 			}, r)
 			if err.Failed {
 				a := err.Left
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:682:40
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:682:40
 				var result2 bool
 				switch a.Tag {
 				case status.VariantConnectErrorExceptionConnectError:
 					result2 = false
 				default: // status.VariantConnectErrorExceptionException
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
 					result2 = exception.Message(a.Exception) == "the stream was interrupted"
 				}
 				var result status.VariantConnectErrorException
 				if result2 {
 					result = a
 				} else {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:682:81
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:682:81
 					result = ClientChange(a)
 				}
 				return nil, status.VariantConnectErrorExceptionFailure{Failed: true, Left: result}
 			}
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:166:20
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:166:20
 			sendFailure := ioref.New(status.NoVariantConnectErrorException)
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:1050:14
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:1050:14
 			handoff := chanffi.NewBufferedChanImpl[*Signal](1)
 //line ../../../../../../../p/transformers-6.1.0/src/Control/Monad/Reader/Trans.purs:70:5
 			producerScope, err := ForkScope(scope, r)
 			if err.Failed {
 				a := err.Left
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:682:40
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:682:40
 				var result bool
 				switch a.Tag {
 				case status.VariantConnectErrorExceptionConnectError:
 					result = false
 				default: // status.VariantConnectErrorExceptionException
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
 					result = exception.Message(a.Exception) == "the stream was interrupted"
 				}
 				var result2 status.VariantConnectErrorException
 				if result {
 					result2 = a
 				} else {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:682:81
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:682:81
 					result2 = ClientChange(a)
 				}
 				return nil, status.VariantConnectErrorExceptionFailure{Failed: true, Left: result2}
@@ -187,36 +187,36 @@ func Client(connection clientffi.Connection) Draw {
 			mVar := mvar.NewEmptyMVarImpl[struct{}]()
 //line ../../../../../../../p/transformers-6.1.0/src/Control/Monad/Reader/Trans.purs:70:5
 			_, err = AddFinalizer(scope, func(_ scope_status.Exit, _ struct{}) status.EitherVariantConnectErrorExceptionUnit {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:769:33
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:769:33
 				mvar.ReadMVarImpl(mVar)
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:769:33
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:769:33
 				return status.RightEitherVariantConnectErrorExceptionUnit(struct{}{})
 			}, r)
 			if err.Failed {
 				a := err.Left
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:682:40
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:682:40
 				var result bool
 				switch a.Tag {
 				case status.VariantConnectErrorExceptionConnectError:
 					result = false
 				default: // status.VariantConnectErrorExceptionException
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
 					result = exception.Message(a.Exception) == "the stream was interrupted"
 				}
 				var result2 status.VariantConnectErrorException
 				if result {
 					result2 = a
 				} else {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:682:81
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:682:81
 					result2 = ClientChange(a)
 				}
 				return nil, status.VariantConnectErrorExceptionFailure{Failed: true, Left: result2}
 			}
 //line ../../../../../../../p/go-io/30228bf274081dcb730b5238c1c00f3fc2363c4c/packages/go-io/src/Go/IO.purs:52:43
 			ioffi.ForkIOImpl(func() {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:771:16
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:771:16
 				io.Finally(func() {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:222:14
 					either2, err3 := internal.CatchResultsImpl(func(x exception.Error) (status.EitherBoolean, dataeither.ErrorFailure) {
 						return status.EitherBoolean{}, dataeither.ErrorFailure{Failed: true, Left: x}
 					}, func() (status.EitherBoolean, dataeither.ErrorFailure) {
@@ -230,15 +230,15 @@ func Client(connection clientffi.Connection) Draw {
 						_, err2 = AddFinalizer(owned, func(value scope_status.Exit, _ struct{}) status.EitherVariantConnectErrorExceptionUnit {
 							switch value.Tag {
 							case scope_status.ExitEnded:
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:182:20
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:182:20
 								clientffi.CloseSendingImpl(call)
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:182:20
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:182:20
 								return status.RightEitherVariantConnectErrorExceptionUnit(struct{}{})
 							case scope_status.ExitFailed:
 								sendFailure.Store(status.JustVariantConnectErrorException(value.Failed))
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:204:22
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:204:22
 								clientffi.CloseImpl(call)
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:204:22
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:204:22
 								return status.RightEitherVariantConnectErrorExceptionUnit(struct{}{})
 							default: // scope_status.ExitInterrupted
 //line ../../../../../../../p/transformers-6.1.0/src/Control/Monad/Reader/Trans.purs:70:5
@@ -285,22 +285,22 @@ func Client(connection clientffi.Connection) Draw {
 						scope_status.CloseScope(exitRecordConnectError, producerScope, r)
 					} else {
 						failure := result.Left
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
 						boolean := context.IsCancelledImpl(producerScope.Context)
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 						var result2 bool
 						switch failure.Tag {
 						case status.VariantConnectErrorExceptionConnectError:
 							result2 = false
 						default: // status.VariantConnectErrorExceptionException
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
 							result2 = exception.Message(failure.Exception) == "the stream was interrupted"
 						}
 						var field scope_status.Exit
 						if boolean || result2 {
 							field = exitRecordConnectError
 						} else {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 							field = scope_status.Failed(failure)
 						}
 //line ../../../../../../../p/either-6.1.0/src/Data/Either.purs:209:1
@@ -318,22 +318,22 @@ func Client(connection clientffi.Connection) Draw {
 						}
 					}
 				}, func() {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:771:73
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:771:73
 					mvar.PutMVarImpl(mVar, struct{}{})
 				})
 			})
 			return func(_ struct{}) (strom.StepXY, status.VariantConnectErrorExceptionFailure) {
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:191:19
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:191:19
 				boolean := clientffi.ReceiveImpl(call)
 				var step strom.StepXY
 				var err2 status.VariantConnectErrorExceptionFailure
 				if boolean {
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:193:18
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:193:18
 					bytes2 := clientffi.ReceivedImpl(call)
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:193:18
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:193:18
 					xy, err3 := method.Response.Read(bytes2, 0, bytes.LengthImpl(bytes2))
 					if err3.Failed {
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:170:24
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:170:24
 						maybe2 := sendFailure.Load()
 //line ../../../../../../../p/either-6.1.0/src/Data/Either.purs:209:1
 						switch maybe2.Tag {
@@ -360,21 +360,21 @@ func Client(connection clientffi.Connection) Draw {
 							err2 = status.VariantConnectErrorExceptionFailure{Failed: true, Left: status.ConnectErrorVariantConnectErrorException(status.ConnectError{Code: status.CodeInternal, Message: "the response doesn't decode: " + result, Details: []shared.ErrorDetail{}})}
 						}
 					} else {
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:170:24
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:170:24
 						maybe2 := sendFailure.Load()
 						switch maybe2.Tag {
 						case maybe.TagJust:
 							err2 = status.VariantConnectErrorExceptionFailure{Failed: true, Left: maybe2.Just}
 						default: // maybe.TagNothing
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:170:24
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:170:24
 							step, err2 = strom.EmitStepXY([]shared.XY{xy}), status.VariantConnectErrorExceptionFailure{}
 						}
 					}
 				} else {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
 					boolean2 := context.IsCancelledImpl(scope.Context)
 					if boolean2 {
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:170:24
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:170:24
 						maybe2 := sendFailure.Load()
 						switch maybe2.Tag {
 						case maybe.TagJust:
@@ -383,12 +383,12 @@ func Client(connection clientffi.Connection) Draw {
 							err2 = status.VariantConnectErrorExceptionFailure{Failed: true, Left: scope_status.Interrupted}
 						}
 					} else {
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:198:20
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:198:20
 						either := clientffi.OutcomeImpl(func(code int) func(string) func([]string) func([]bytes.Bytes) status.EitherConnectError {
 							return func(message string) func([]string) func([]bytes.Bytes) status.EitherConnectError {
 								return func(typeNames []string) func([]bytes.Bytes) status.EitherConnectError {
 									return func(encodings []bytes.Bytes) status.EitherConnectError {
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:198:20
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:198:20
 										return client.FailedWith(code, message, typeNames, encodings)
 									}
 								}
@@ -408,20 +408,20 @@ func Client(connection clientffi.Connection) Draw {
 //line ../../../../../../../p/either-6.1.0/src/Data/Either.purs:209:1
 				if err2.Failed {
 					a := err2.Left
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:682:40
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:682:40
 					var result bool
 					switch a.Tag {
 					case status.VariantConnectErrorExceptionConnectError:
 						result = false
 					default: // status.VariantConnectErrorExceptionException
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
 						result = exception.Message(a.Exception) == "the stream was interrupted"
 					}
 					var result2 status.VariantConnectErrorException
 					if result {
 						result2 = a
 					} else {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:682:81
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:682:81
 						result2 = ClientChange(a)
 					}
 					return strom.StepXY{}, status.VariantConnectErrorExceptionFailure{Failed: true, Left: result2}
@@ -432,15 +432,15 @@ func Client(connection clientffi.Connection) Draw {
 	}}
 }
 
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:140:12
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:140:12
 func AddFinalizer(scope scope_status.Scope, finalize func(scope_status.Exit, struct{}) status.EitherVariantConnectErrorExceptionUnit, r struct{}) (int, status.VariantConnectErrorExceptionFailure) {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:140:12
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:140:12
 	maybe2 := ioref.AtomicModifyIORefImpl(FstMaybeFinalizerKey, SndMaybeFinalizerKey, func(value scope_status.Finalizers) TupleMaybeInt {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:145:3
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:145:3
 		switch value.Tag {
 		case scope_status.FinalizersOpen:
 			key := value.Open0
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:146:28
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:146:28
 			return TupleMaybeInt{First: scope_status.Open(key+1, array.Snoc(value.Open1, scope_status.Registered{First: key, Second: finalize})), Second: maybe.JustInt(key)}
 		default: // scope_status.FinalizersClosed
 			return TupleMaybeInt{First: scope_status.Finalizers{Tag: scope_status.FinalizersClosed}, Second: maybe.NoInt}
@@ -468,7 +468,7 @@ func AddFinalizer(scope scope_status.Scope, finalize func(scope_status.Exit, str
 //line client.go:469
 func ForkScope(parent scope_status.Scope, r struct{}) (scope_status.Scope, status.VariantConnectErrorExceptionFailure) {
 	x := func() scope_status.Scope {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:121:12
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:121:12
 		return scope_status.NewScope(parent.Context)
 	}
 //line ../../../../../../../p/transformers-6.1.0/src/Control/Monad/Reader/Trans.purs:70:5
@@ -482,26 +482,26 @@ func ForkScope(parent scope_status.Scope, r struct{}) (scope_status.Scope, statu
 	if err.Failed {
 		return scope_status.Scope{}, err
 	}
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:134:3
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:134:3
 	scope.DetachFromParent.Store(func() {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:152:46
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:152:46
 		ioref.AtomicModifyIORefImpl(FstUnit, func(tuple TupleUnit) struct{} {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:152:46
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:152:46
 			SndUnit(tuple)
 			return struct{}{}
 		}, func(state scope_status.Finalizers) TupleUnit {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:152:87
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:152:87
 			var result scope_status.Finalizers
 			switch state.Tag {
 			case scope_status.FinalizersOpen:
 				kept := []scope_status.Registered{}
 				for _, x2 := range state.Open1 {
 					if x2.First != i {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:155:32
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:155:32
 						kept = append(kept, x2)
 					}
 				}
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:155:32
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:155:32
 				result = scope_status.Open(state.Open0, kept)
 			default: // scope_status.FinalizersClosed
 				result = scope_status.Finalizers{Tag: scope_status.FinalizersClosed}
@@ -535,25 +535,25 @@ func OpenClosingAtEndStream(owned scope_status.Scope, f func(scope_status.Scope,
 	exitRecordConnectError := scope_status.Exit{Tag: scope_status.ExitInterrupted}
 	if err.Failed {
 		a := err.Left
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
 		boolean := context.IsCancelledImpl(owned.Context)
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 		var result2 bool
 		switch a.Tag {
 		case status.VariantConnectErrorExceptionConnectError:
 			result2 = false
 		default: // status.VariantConnectErrorExceptionException
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
 			result2 = exception.Message(a.Exception) == "the stream was interrupted"
 		}
 		var result scope_status.Exit
 		if boolean || result2 {
 			result = exitRecordConnectError
 		} else {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 			result = scope_status.Failed(a)
 		}
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 		_, err2 := scope_status.CloseScope(result, owned, r)
 		if err2.Failed {
 			return nil, err2
@@ -565,25 +565,25 @@ func OpenClosingAtEndStream(owned scope_status.Scope, f func(scope_status.Scope,
 		step, err2 := f2(r2)
 		if err2.Failed {
 			a := err2.Left
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
 			boolean := context.IsCancelledImpl(owned.Context)
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 			var result bool
 			switch a.Tag {
 			case status.VariantConnectErrorExceptionConnectError:
 				result = false
 			default: // status.VariantConnectErrorExceptionException
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
 				result = exception.Message(a.Exception) == "the stream was interrupted"
 			}
 			var result2 scope_status.Exit
 			if boolean || result {
 				result2 = exitRecordConnectError
 			} else {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 				result2 = scope_status.Failed(a)
 			}
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 			_, err3 := scope_status.CloseScope(result2, owned, r2)
 			if err3.Failed {
 				return strom.StepBoolean{}, err3
@@ -627,25 +627,25 @@ func OpenClosingAtEndStream2(owned scope_status.Scope, f func(scope_status.Scope
 	eitherVariantConnectErrorExceptionStepBoolean := RightEitherStepBoolean(stepBoolean)
 	if err.Failed {
 		a := err.Left
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
 		boolean := context.IsCancelledImpl(owned.Context)
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 		var result2 bool
 		switch a.Tag {
 		case status.VariantConnectErrorExceptionConnectError:
 			result2 = false
 		default: // status.VariantConnectErrorExceptionException
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
 			result2 = exception.Message(a.Exception) == "the stream was interrupted"
 		}
 		var result scope_status.Exit
 		if boolean || result2 {
 			result = exitRecordConnectError
 		} else {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 			result = scope_status.Failed(a)
 		}
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 		_, err2 := scope_status.CloseScope(result, owned, r)
 		if err2.Failed {
 			return nil, err2
@@ -656,32 +656,32 @@ func OpenClosingAtEndStream2(owned scope_status.Scope, f func(scope_status.Scope
 	f2, err := OpenClosingAtEndStream(upstream, f, method, clientCall, r)
 	if err.Failed {
 		a := err.Left
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
 		boolean := context.IsCancelledImpl(owned.Context)
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 		var result bool
 		switch a.Tag {
 		case status.VariantConnectErrorExceptionConnectError:
 			result = false
 		default: // status.VariantConnectErrorExceptionException
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
 			result = exception.Message(a.Exception) == "the stream was interrupted"
 		}
 		var result2 scope_status.Exit
 		if boolean || result {
 			result2 = exitRecordConnectError
 		} else {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 			result2 = scope_status.Failed(a)
 		}
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 		_, err2 := scope_status.CloseScope(result2, owned, r)
 		if err2.Failed {
 			return nil, err2
 		}
 		return nil, status.VariantConnectErrorExceptionFailure{Failed: true, Left: a}
 	}
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:474:11
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:474:11
 	ioRef := ioref.New(false)
 	return func(r2 struct{}) (strom.StepBoolean, status.VariantConnectErrorExceptionFailure) {
 		boolean := ioRef.Load()
@@ -702,25 +702,25 @@ func OpenClosingAtEndStream2(owned scope_status.Scope, f func(scope_status.Scope
 		step, err3 := f2(r2)
 		if err3.Failed {
 			a := err3.Left
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
 			boolean2 := context.IsCancelledImpl(owned.Context)
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 			var result bool
 			switch a.Tag {
 			case status.VariantConnectErrorExceptionConnectError:
 				result = false
 			default: // status.VariantConnectErrorExceptionException
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
 				result = exception.Message(a.Exception) == "the stream was interrupted"
 			}
 			var result2 scope_status.Exit
 			if boolean2 || result {
 				result2 = exitRecordConnectError
 			} else {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 				result2 = scope_status.Failed(a)
 			}
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 			_, err2 := scope_status.CloseScope(result2, owned, r2)
 			if err2.Failed {
 				return strom.StepBoolean{}, err2
@@ -761,7 +761,7 @@ func OpenClosingAtEndStream2(owned scope_status.Scope, f func(scope_status.Scope
 			eitherVariantConnectErrorExceptionStepBoolean2 := RightEitherStepBoolean(stepBoolean2)
 //line ../../../../../../../p/arrays-7.3.0/src/Data/Array.purs:1022:3
 			if len(result.Rest) != 0 {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:485:13
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom.purs:485:13
 				ioRef.Store(true)
 //line ../../../../../../../p/either-6.1.0/src/Data/Either.purs:209:1
 				_, err2 := scope_status.CloseScope(exitRecordConnectError, upstream, r2)
@@ -778,9 +778,9 @@ func OpenClosingAtEndStream2(owned scope_status.Scope, f func(scope_status.Scope
 	}, status.VariantConnectErrorExceptionFailure{}
 }
 
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Om/Client.purs:165:1
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Om/Client.purs:165:1
 func ClientChange(failure status.VariantConnectErrorException) status.VariantConnectErrorException {
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Om/Client.purs:165:1
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Om/Client.purs:165:1
 	switch failure.Tag {
 	case status.VariantConnectErrorExceptionConnectError:
 		scrutinee := rejection.Rejections(proxy.ProxyProxy).Decode(failure.ConnectError.Code, failure.ConnectError.Message, failure.ConnectError.Details)
@@ -812,13 +812,13 @@ func ClientHandOverAll(handoff chanffi.Chan[*Signal], producerScope scope_status
 				return true, status.VariantConnectErrorExceptionFailure{}
 			default: // strom.StepEmit
 				context2 := producerScope.Context
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Handoff.purs:39:16
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Handoff.purs:39:16
 				cancelled := context.IsCancelledImpl(context2)
 				var boolean bool
 				if cancelled {
 					boolean = false
 				} else {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Handoff.purs:41:8
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Handoff.purs:41:8
 					boolean = selectffi.Select2Impl(selectffi.OnSendImpl(handoff, &Signal{Tag: SignalPulled, Field0: 0, Field1: either.Right.Emit}, func() bool {
 						return true
 					}), selectffi.OnReceiveImpl(context.DoneImpl(context2), func(_ struct{}, _ bool) bool {
@@ -837,7 +837,7 @@ func ClientHandOverAll(handoff chanffi.Chan[*Signal], producerScope scope_status
 //line client.go:838
 func ClientHandOver(handoff chanffi.Chan[*Signal], producerScope scope_status.Scope, signal *Signal, unit struct{}) (struct{}, status.VariantConnectErrorExceptionFailure) {
 	context2 := producerScope.Context
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Handoff.purs:39:16
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Handoff.purs:39:16
 	cancelled := context.IsCancelledImpl(context2)
 	if !cancelled {
 		selectffi.Select2Impl(selectffi.OnSendImpl(handoff, signal, func() bool {
@@ -866,9 +866,9 @@ func ClientPullUntilEnd(pullUpstream func(struct{}) (strom.StepBoolean, status.V
 	}
 }
 
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:170:24
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:170:24
 func ClientJoin(sendFailure ioref.IORef[status.MaybeVariantConnectErrorException], b EitherStepXY) (strom.StepXY, status.VariantConnectErrorExceptionFailure) {
-//line ../../../../../../../p/yoga-connect-go/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:170:24
+//line ../../../../../../../p/yoga-connect-go/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-connect-go/src/Yoga/Connect/Client.purs:170:24
 	maybe2 := sendFailure.Load()
 	if maybe2.Tag == maybe.TagJust {
 		return strom.StepXY{}, status.VariantConnectErrorExceptionFailure{Failed: true, Left: maybe2.Just}
@@ -936,25 +936,25 @@ func OpenClosingAtEndStreamJoin(owned scope_status.Scope, r struct{}, step strom
 //line ../../../../../../../p/either-6.1.0/src/Data/Either.purs:210:24
 	if err.Failed {
 		failure := err.Left
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:184:23
 		boolean := context.IsCancelledImpl(owned.Context)
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 		var result2 bool
 		switch failure.Tag {
 		case status.VariantConnectErrorExceptionConnectError:
 			result2 = false
 		default: // status.VariantConnectErrorExceptionException
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:215:70
 			result2 = exception.Message(failure.Exception) == "the stream was interrupted"
 		}
 		var result scope_status.Exit
 		if boolean || result2 {
 			result = scope_status.Exit{Tag: scope_status.ExitInterrupted}
 		} else {
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 			result = scope_status.Failed(failure)
 		}
-//line ../../../../../../../p/yoga-strom-io/098ab498b3d32cd8ff19c1fcf1292bad04856cb3/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
+//line ../../../../../../../p/yoga-strom-io/9008eae956dc0dfcad5be9f47da59248dc854086/packages/yoga-strom-io/src/Yoga/OmIO/Strom/Scope.purs:105:22
 		_, err2 := scope_status.CloseScope(result, owned, r)
 		if err2.Failed {
 			return strom.StepBoolean{}, err2
