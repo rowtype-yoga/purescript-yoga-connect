@@ -133,15 +133,14 @@ In the PureScript version that's `Strom.mapPar 4 findWhoIsOnCall` and `Strom.cat
 
 ## The Go googoo writes
 
-`googoo go out` puts the Go for this program in `out/`. 0.1.18-go.3 made it quite a bit easier to
-read than 0.1.18-go.2 did:
+`googoo go out` puts the Go for this program in `out/`. Every release made it easier to read:
 
-| | 0.1.18-go.2 | 0.1.18-go.3 |
-| --- | --- | --- |
-| `switch either` | 56 | 35 |
-| average function name | 40.6 characters | 25.9 characters |
-| function names of 30 characters or more | 83 | 33 |
-| longest function name | 138 characters | 115 characters |
+| | 0.1.18-go.2 | 0.1.18-go.3 | 0.1.18-go.5 |
+| --- | --- | --- | --- |
+| `switch either` | 56 | 35 | 8 |
+| average function name | 40.6 characters | 25.9 characters | 20.8 characters |
+| function names of 30 characters or more | 83 | 33 | 16 |
+| longest function name | 138 characters | 115 characters | 67 characters |
 
-Failures come back as `(value, err)` now instead of an `Either` to switch on. The long names are
-the Strom pipeline's specialisations, which still get long.
+Failures come back as `(value, err)` instead of an `Either` to switch on. The long names left are
+the Strom pipeline's specialisations, like `JustSignalRotatedMVarEitherVariantExceptionRotatedTupleWindowString`.

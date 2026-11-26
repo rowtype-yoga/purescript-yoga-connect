@@ -206,17 +206,18 @@ stuck forever. In PureScript, `mergeAll` owns those goroutines, and closing the 
 
 ## The Go googoo writes
 
-`googoo go -p ticker --entry Ticker.Server.main out` puts the server's Go in `out/`. 0.1.18-go.3
-made it nicer to read than 0.1.18-go.2 did, the client even more so:
+`googoo go -p ticker --entry Ticker.Server.main out` puts the server's Go in `out/`. Each release made
+it nicer to read:
 
-| | server, go.2 | server, go.3 | client, go.2 | client, go.3 |
-| --- | --- | --- | --- | --- |
-| `switch either` | 43 | 32 | 39 | 19 |
-| average function name | 47.7 characters | 35.4 characters | 45.3 characters | 26.5 characters |
-| function names of 30 characters or more | 83 | 49 | 66 | 17 |
+| | server, go.2 | server, go.3 | server, go.5 | client, go.2 | client, go.3 | client, go.5 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `switch either` | 43 | 32 | 12 | 39 | 19 | 10 |
+| average function name | 47.7 characters | 35.4 characters | 27.2 characters | 45.3 characters | 26.5 characters | 22.6 characters |
+| function names of 30 characters or more | 83 | 49 | 37 | 66 | 17 | 10 |
 
-Handlers that fail return `(value, err)` now instead of an `Either` to switch on. The Strom
-pipelines' specialisations still get some silly long names, the longest is the same as before.
+Handlers that fail return `(value, err)` instead of an `Either` to switch on. The Strom pipelines'
+specialisations still get some silly long names: the server's longest went from 694 characters to
+214, the client's is still 392.
 
 ## Any gRPC client works
 

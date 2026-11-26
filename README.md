@@ -1,7 +1,7 @@
 # purescript-yoga-connect
 
 gRPC for PureScript, from your `.proto` files. Servers and clients are derived from one service
-row, and on Go (through [Iris](https://github.com/i-am-the-slime/iris-go-backend)) each method
+row, and on Go (through [googoo](https://github.com/i-am-the-slime/iris-go-backend)) each method
 compiles down to straight-line Go: decode, your handler, encode.
 
 ```proto

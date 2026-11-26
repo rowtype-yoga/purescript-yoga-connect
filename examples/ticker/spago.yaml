@@ -1,6 +1,6 @@
 package:
   name: ticker
-  description: A live stock ticker over gRPC, compiled to Go with Iris. A server that streams
+  description: A live stock ticker over gRPC, compiled to Go with googoo. A server that streams
     quotes and fills trades, and a client that watches and trades.
   dependencies:
     - arrays
