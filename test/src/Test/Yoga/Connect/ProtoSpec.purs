@@ -36,11 +36,11 @@ studioProto =
 package studio.v1;
 
 service Studio {
-  rpc Follow(FollowRequest) returns (stream FollowResponse);
-  rpc List(ListRequest) returns (ListResponse);
-  rpc Save(SaveRequest) returns (Saved);
-  rpc Sketch(stream SketchRequest) returns (stream SketchResponse);
-  rpc Upload(stream UploadRequest) returns (UploadResponse);
+  rpc Follow(studio.v1.FollowRequest) returns (stream studio.v1.FollowResponse);
+  rpc List(studio.v1.ListRequest) returns (studio.v1.ListResponse);
+  rpc Save(studio.v1.SaveRequest) returns (studio.v1.Saved);
+  rpc Sketch(stream studio.v1.SketchRequest) returns (stream studio.v1.SketchResponse);
+  rpc Upload(stream studio.v1.UploadRequest) returns (studio.v1.UploadResponse);
 }
 
 message FollowRequest {

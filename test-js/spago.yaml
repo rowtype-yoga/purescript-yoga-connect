@@ -1,0 +1,12 @@
+package:
+  name: yoga-connect-test-js
+  description: Specs of yoga-connect compiled with purs and run on JavaScript with bun
+  dependencies:
+    - aff: ">=8.0.1 <9.0.0"
+    - effect: ">=4.0.1 <5.0.0"
+    - either: ">=6.1.1 <7.0.0"
+    - prelude: ">=6.0.3 <7.0.0"
+    - spec: ">=8.1.2 <9.0.0"
+    - variant: ">=8.0.0 <9.0.0"
+    - yoga-connect: "*"
+    - yoga-protobuf: "*"

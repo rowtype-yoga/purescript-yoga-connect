@@ -292,6 +292,40 @@
           "dependencies": []
         }
       },
+      "yoga-connect-test-js": {
+        "path": "test-js",
+        "core": {
+          "dependencies": [
+            {
+              "aff": ">=8.0.1 <9.0.0"
+            },
+            {
+              "effect": ">=4.0.1 <5.0.0"
+            },
+            {
+              "either": ">=6.1.1 <7.0.0"
+            },
+            {
+              "prelude": ">=6.0.3 <7.0.0"
+            },
+            {
+              "spec": ">=8.1.2 <9.0.0"
+            },
+            {
+              "variant": ">=8.0.0 <9.0.0"
+            },
+            {
+              "yoga-connect": "*"
+            },
+            {
+              "yoga-protobuf": "*"
+            }
+          ]
+        },
+        "test": {
+          "dependencies": []
+        }
+      },
       "yoga-strom-io": {
         "path": "packages/yoga-strom-io",
         "core": {

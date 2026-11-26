@@ -48,11 +48,13 @@ printService fullName methods = String.joinWith "\n" (Array.concat [ header, [ s
   header = [ "syntax = \"proto3\";\n" ] <> (package # foldMaybe \name -> [ "package " <> name <> ";\n" ])
   service = "service " <> serviceName <> " {\n" <> foldLines (methods <#> rpc) <> "}\n"
   rpc { name, schema } =
-    "  rpc " <> name <> "(" <> streamed schema.clientStreams <> requestOf name schema <> ") returns ("
+    "  rpc " <> name <> "(" <> streamed schema.clientStreams <> qualified (requestOf name schema) <> ") returns ("
       <> streamed schema.serverStreams
-      <> responseOf name schema
+      <> qualified (responseOf name schema)
       <> ");\n"
   streamed streams = if streams then "stream " else ""
+  -- Inside the service a bare `Trade` would be the method `Trade`, not the message.
+  qualified messageName = (package # fromMaybe "") <> "." <> messageName
   requestOf name schema = schema.requestName # fromMaybe (name <> "Request")
   responseOf name schema = schema.responseName # fromMaybe (name <> "Response")
 

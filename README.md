@@ -280,3 +280,10 @@ grpcurl -plaintext -proto demo/proto/greeter.proto \
 googoo run --go -p yoga-connect-test
 googoo run --go -p yoga-strom-io-test
 ```
+
+`yoga-connect` itself is plain PureScript and runs on JavaScript too:
+
+```
+spago build -p yoga-connect-test-js
+bun --eval 'import("./output/Test.JS.Main/index.js").then(m => m.main())'
+```

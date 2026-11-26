@@ -222,7 +222,7 @@ instance RejectionCode "unauthenticated" where
 
 -- | The code and message of a rejection whose labels are known: one test per label of the row,
 -- | rather than one per code.
-class Rejection (labels :: RowList Type) (row :: Row Type) where
+class Rejection (labels :: RowList Type) (row :: Row Type) | labels -> row where
   rejectionOf :: forall result. Proxy labels -> (Code -> String -> result) -> Variant row -> result
 
 instance Rejection RowList.Nil () where

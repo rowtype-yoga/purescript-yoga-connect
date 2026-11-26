@@ -229,8 +229,8 @@ googoo run -q -p ticker --main Ticker.Service > ticker.proto
 
 ```proto
 service Ticker {
-  rpc Trade(stream TradeRequest) returns (stream TradeResponse);
-  rpc Watch(WatchRequest) returns (stream WatchResponse);
+  rpc Trade(stream ticker.v1.TradeRequest) returns (stream ticker.v1.TradeResponse);
+  rpc Watch(ticker.v1.WatchRequest) returns (stream ticker.v1.WatchResponse);
 }
 
 message TradeRequest {
