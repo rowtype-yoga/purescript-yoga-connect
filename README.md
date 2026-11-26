@@ -244,6 +244,9 @@ A browser client would be another package next to `yoga-connect-go`, derived fro
 
 ## Examples
 
+[examples/draw](examples/draw): the smallest of them, to read in one sitting. A shared canvas in the
+terminal: one bidi call each, the server passes every painted cell on to everyone.
+
 [examples/ticker](examples/ticker): a live stock ticker. The server merges a price stream per
 symbol and fills trades over a bidi stream, turning bad ones down with `FAILED_PRECONDITION`; the
 client watches with a deadline and trades. Its README holds it up against the same server in

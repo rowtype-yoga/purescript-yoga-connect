@@ -1,0 +1,18 @@
+package:
+  name: draw-test
+  description: Two clients without a terminal drawing on a server of their own
+  dependencies:
+    - arrays
+    - bubbletea
+    - draw
+    - effect
+    - foldable-traversable
+    - go-io
+    - maybe
+    - prelude
+    - spec
+    - strings
+    - tuples
+    - yoga-connect-go
+  run:
+    main: Test.Main

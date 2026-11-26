@@ -1,0 +1,23 @@
+package:
+  name: draw
+  description: A shared terminal canvas over gRPC, compiled to Go with googoo. Draw with the mouse
+    and see everyone else's drawing.
+  dependencies:
+    - arrays
+    - bubbletea
+    - effect
+    - either
+    - exceptions
+    - foldable-traversable
+    - go-io
+    - maybe
+    - ordered-collections
+    - prelude
+    - strings
+    - tuples
+    - variant
+    - yoga-connect-go
+    - yoga-strom-io
+workspace:
+  packageSet:
+    url: https://raw.githubusercontent.com/rowtype-yoga/purescript-go-package-sets/go-0.1.18-20261126.6/packages.json
