@@ -136,7 +136,7 @@ package:
     - yoga-strom-io
 workspace:
   packageSet:
-    url: https://raw.githubusercontent.com/rowtype-yoga/purescript-go-package-sets/go-0.1.18-20261126.7/packages.json
+    url: https://raw.githubusercontent.com/rowtype-yoga/purescript-go-package-sets/go-0.1.18-20261126.8/packages.json
 ```
 
 You need googoo 0.1.18-go.5 or newer (`brew install spago i-am-the-slime/tap/googoo`) and Go 1.27.
