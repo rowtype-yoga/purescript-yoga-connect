@@ -12,7 +12,7 @@ Strom.range 0 1000000
   # Strom.forEach send
 ```
 
-Through Iris that's a loop over chunks of 4096. Each chunk is mapped with plain `for` loops (SIMD
+Through googoo that's a loop over chunks of 4096. Each chunk is mapped with plain `for` loops (SIMD
 kernels for numbers), and `send` runs in a `for` loop over the chunk, with no closure per element.
 
 ## How it works
@@ -59,12 +59,12 @@ something and stops the other.
   both elements before passing either on. To pace elements, zip them with `every`.
 - Wait with `Strom.every`, `repeatOmWith` and `Strom.sleep scope`, not with go-io's `threadDelay`: those
   stop as soon as the stream is interrupted.
-- Keep records out of a stream's own state, such as a `scan`'s. Iris boxes a record that goes
+- Keep records out of a stream's own state, such as a `scan`'s. googoo boxes a record that goes
   through go-io's `IORef`, so a `/\` or a data type is faster there.
 
 ## Specs and benchmark
 
 ```
-iris run --go -p yoga-strom-io-test
-iris run --go -p yoga-strom-io-bench
+googoo run --go -p yoga-strom-io-test
+googoo run --go -p yoga-strom-io-bench
 ```

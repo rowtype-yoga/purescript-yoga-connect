@@ -1,7 +1,7 @@
 # Ticker
 
 A live stock ticker over gRPC, in PureScript, compiled to one Go binary with
-[Iris](https://github.com/i-am-the-slime/iris-go-backend).
+[googoo](https://github.com/i-am-the-slime/iris-go-backend).
 
 ```proto
 service Ticker {
@@ -21,17 +21,17 @@ The whole server is [src/Ticker/Server.purs](src/Ticker/Server.purs), the client
 
 ## Running it
 
-You need Iris 0.1.18-go.2 or newer (`brew install spago i-am-the-slime/tap/iris`) and Go 1.27.
+You need googoo 0.1.18-go.3 or newer (`brew install spago i-am-the-slime/tap/googoo`) and Go 1.27.
 
 ```
 cd examples/ticker
-iris run --go -p ticker --main Ticker.Server
+googoo run --go -p ticker --main Ticker.Server
 ```
 
 and in another terminal
 
 ```
-iris run --go -p ticker --main Ticker.Client
+googoo run --go -p ticker --main Ticker.Client
 ```
 
 ```
@@ -203,6 +203,20 @@ func feed(ctx context.Context, l listing, quotes chan<- *pb.Quote) {
 
 Get the order of `cancel()` and `feeds.Wait()` wrong and a client that hangs up leaves the handler
 stuck forever. In PureScript, `mergeAll` owns those goroutines, and closing the call closes them.
+
+## The Go googoo writes
+
+`googoo go -p ticker --entry Ticker.Server.main out` puts the server's Go in `out/`. 0.1.18-go.3
+made it nicer to read than 0.1.18-go.2 did, the client even more so:
+
+| | server, go.2 | server, go.3 | client, go.2 | client, go.3 |
+| --- | --- | --- | --- | --- |
+| `switch either` | 43 | 32 | 39 | 19 |
+| average function name | 47.7 characters | 35.4 characters | 45.3 characters | 26.5 characters |
+| function names of 30 characters or more | 83 | 49 | 66 | 17 |
+
+Handlers that fail return `(value, err)` now instead of an `Either` to switch on. The Strom
+pipelines' specialisations still get some silly long names, the longest is the same as before.
 
 ## Any gRPC client works
 

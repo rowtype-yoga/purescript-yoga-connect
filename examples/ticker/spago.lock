@@ -49,7 +49,7 @@
     },
     "package_set": {
       "address": {
-        "url": "https://raw.githubusercontent.com/rowtype-yoga/purescript-go-package-sets/go-0.1.18-20261125/packages.json"
+        "url": "https://raw.githubusercontent.com/rowtype-yoga/purescript-go-package-sets/go-0.1.18-20261126/packages.json"
       },
       "compiler": ">=0.15.15 <0.16.0",
       "content": {
@@ -260,7 +260,7 @@
         },
         "yoga-go-http-om": {
           "git": "https://github.com/rowtype-yoga/purescript-yoga-go-http-om.git",
-          "ref": "v0.1.1",
+          "ref": "v0.1.2",
           "dependencies": [
             "aff",
             "arrays",
@@ -1281,7 +1281,7 @@
     "yoga-go-http-om": {
       "type": "git",
       "url": "https://github.com/rowtype-yoga/purescript-yoga-go-http-om.git",
-      "rev": "013eb3c10d3465bd46d8157e12d82bcef8d9efaf",
+      "rev": "fa04f4b0b8724ff8225ab31d1a58d9a97a40b58a",
       "dependencies": [
         "aff",
         "arrays",

@@ -35,17 +35,17 @@ What it shows:
 - **`mapPar`.** The on-call lookup takes 40 ms. `mapPar 4` runs four at a time, and the windows
   still come out in order.
 - **Chunks.** `summarize` gets a window as an `Array`. The mean and the slowest latency are
-  `Array.foldl (+)` and `Array.foldl max` over an `Array Number`, which Iris turns into SIMD loops
+  `Array.foldl (+)` and `Array.foldl max` over an `Array Number`, which googoo turns into SIMD loops
   with four vector accumulators, on arm64 (NEON) and WebAssembly. Elsewhere they're plain loops.
 
 ## Running it
 
-You need [Iris](https://github.com/i-am-the-slime/iris-go-backend) 0.1.18-go.2 or later and Go 1.27.
-The `spago.yaml` uses the Go package set, so there's nothing else to set up:
+You need [googoo](https://github.com/i-am-the-slime/iris-go-backend) 0.1.18-go.3 or later and Go
+1.27. The `spago.yaml` uses the Go package set, so there's nothing else to set up:
 
 ```bash
 cd examples/log-tailer
-iris run --go
+googoo run --go
 ```
 
 ## Sample output
@@ -130,3 +130,18 @@ for tailOnce(ctx, svc, batches) == errRotated {
 ```
 
 In the PureScript version that's `Strom.mapPar 4 findWhoIsOnCall` and `Strom.catchAll reopenIfRotated`.
+
+## The Go googoo writes
+
+`googoo go out` puts the Go for this program in `out/`. 0.1.18-go.3 made it quite a bit easier to
+read than 0.1.18-go.2 did:
+
+| | 0.1.18-go.2 | 0.1.18-go.3 |
+| --- | --- | --- |
+| `switch either` | 56 | 35 |
+| average function name | 40.6 characters | 25.9 characters |
+| function names of 30 characters or more | 83 | 33 |
+| longest function name | 138 characters | 115 characters |
+
+Failures come back as `(value, err)` now instead of an `Either` to switch on. The long names are
+the Strom pipeline's specialisations, which still get long.

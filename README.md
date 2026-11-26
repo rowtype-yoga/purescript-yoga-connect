@@ -61,7 +61,7 @@ workspace:
       subdir: packages/go-io
 ```
 
-You need Iris 0.1.18-go.2 or newer (`brew install spago i-am-the-slime/tap/iris`) and Go 1.27.
+You need googoo 0.1.18-go.3 or newer (`brew install spago i-am-the-slime/tap/googoo`) and Go 1.27.
 `protoc-gen-purescript` comes with yoga-protobuf, its README says how to build it.
 
 ## Server
@@ -176,8 +176,8 @@ grpc-go.
 `demo/server` and `demo/client`.
 
 ```
-iris run --go -p greeter-server
-iris run --go -p greeter-client
+googoo run --go -p greeter-server
+googoo run --go -p greeter-client
 ```
 
 Any gRPC client works too:
@@ -191,6 +191,6 @@ grpcurl -plaintext -proto demo/proto/greeter.proto \
 ## Specs
 
 ```
-iris run --go -p yoga-connect-test
-iris run --go -p yoga-strom-io-test
+googoo run --go -p yoga-connect-test
+googoo run --go -p yoga-strom-io-test
 ```
