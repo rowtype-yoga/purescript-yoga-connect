@@ -147,7 +147,7 @@ func ReceivedImpl(c *call) []byte { return c.received }
 // FailedImpl says whether the call has failed, such as when the client's stream broke off.
 func FailedImpl(c *call) bool { return c.failure != nil }
 
-func FailImpl(c *call, code int32, message string) {
+func FailImpl(c *call, code int, message string) {
 	if c.failure == nil {
 		c.failure = connect.NewError(connect.Code(code), errors.New(message))
 	}
@@ -155,8 +155,8 @@ func FailImpl(c *call, code int32, message string) {
 
 // ListenImpl binds the address and serves HTTP/1.1 and HTTP/2 without TLS, which gRPC clients
 // use, in the background.
-func ListenImpl[R any](failed func(string) R, bound func(int32) R, host string, port int32, s *server) R {
-	listener, err := net.Listen("tcp", net.JoinHostPort(host, strconv.Itoa(int(port))))
+func ListenImpl[R any](failed func(string) R, bound func(int) R, host string, port int, s *server) R {
+	listener, err := net.Listen("tcp", net.JoinHostPort(host, strconv.Itoa(port)))
 	if err != nil {
 		return failed(err.Error())
 	}
@@ -166,5 +166,5 @@ func ListenImpl[R any](failed func(string) R, bound func(int32) R, host string, 
 	s.http = &http.Server{Handler: s.routes, Protocols: protocols}
 	eventloop.Hold()
 	go s.http.Serve(listener)
-	return bound(int32(listener.Addr().(*net.TCPAddr).Port))
+	return bound(listener.Addr().(*net.TCPAddr).Port)
 }

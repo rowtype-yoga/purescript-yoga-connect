@@ -47,7 +47,7 @@ func (c *connection) client(procedure string) *connect.Client[[]byte, []byte] {
 	return existing.(*connect.Client[[]byte, []byte])
 }
 
-func CallUnaryImpl[R any](failed func(int32) func(string) R, succeeded func([]byte) R, ctx context.Context, c *connection, procedure string, request []byte) R {
+func CallUnaryImpl[R any](failed func(int) func(string) R, succeeded func([]byte) R, ctx context.Context, c *connection, procedure string, request []byte) R {
 	response, err := c.client(procedure).CallUnary(ctx, connect.NewRequest(&request))
 	if err != nil {
 		return failure(failed, err)
@@ -81,7 +81,7 @@ func CloseSendingImpl(call *clientCall) {
 	call.bidiStream.CloseRequest()
 }
 
-func CloseAndReceiveImpl[R any](failed func(int32) func(string) R, succeeded func([]byte) R, call *clientCall) R {
+func CloseAndReceiveImpl[R any](failed func(int) func(string) R, succeeded func([]byte) R, call *clientCall) R {
 	response, err := call.clientStream.CloseAndReceive()
 	if err != nil {
 		return failure(failed, err)
@@ -114,7 +114,7 @@ func ReceiveImpl(call *clientCall) bool {
 
 func ReceivedImpl(call *clientCall) []byte { return call.received }
 
-func OutcomeImpl[R any](failed func(int32) func(string) R, finished R, call *clientCall) R {
+func OutcomeImpl[R any](failed func(int) func(string) R, finished R, call *clientCall) R {
 	CloseImpl(call)
 	if call.failure != nil {
 		return failure(failed, call.failure)
@@ -131,10 +131,10 @@ func CloseImpl(call *clientCall) {
 	}
 }
 
-func failure[R any](failed func(int32) func(string) R, err error) R {
+func failure[R any](failed func(int) func(string) R, err error) R {
 	var connectError *connect.Error
 	if errors.As(err, &connectError) {
-		return failed(int32(connectError.Code()))(connectError.Message())
+		return failed(int(connectError.Code()))(connectError.Message())
 	}
-	return failed(int32(connect.CodeUnknown))(err.Error())
+	return failed(int(connect.CodeUnknown))(err.Error())
 }

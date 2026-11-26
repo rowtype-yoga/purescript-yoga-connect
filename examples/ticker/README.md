@@ -21,7 +21,7 @@ The whole server is [src/Ticker/Server.purs](src/Ticker/Server.purs), the client
 
 ## Running it
 
-You need googoo 0.1.18-go.3 or newer (`brew install spago i-am-the-slime/tap/googoo`) and Go 1.27.
+You need googoo 0.1.18-go.5 or newer (`brew install spago i-am-the-slime/tap/googoo`) and Go 1.27.
 
 ```
 cd examples/ticker

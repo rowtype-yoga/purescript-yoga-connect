@@ -39,29 +39,29 @@ workspace:
   extraPackages:
     yoga-connect:
       git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
-      ref: v0.1.1
+      ref: v0.2.0
       subdir: packages/yoga-connect
     yoga-connect-go:
       git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
-      ref: v0.1.1
+      ref: v0.2.0
       subdir: packages/yoga-connect-go
     yoga-strom-io:
       git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
-      ref: v0.1.1
+      ref: v0.2.0
       subdir: packages/yoga-strom-io
     yoga-protobuf:
       git: https://github.com/rowtype-yoga/purescript-yoga-protobuf.git
-      ref: v0.1.0
+      ref: v0.2.0
     yoga-go-http-om:
       git: https://github.com/rowtype-yoga/purescript-yoga-go-http-om.git
-      ref: v0.1.1
+      ref: v0.2.0
     go-io:
       git: https://github.com/i-am-the-slime/purescript-go.git
-      ref: v0.2.0
+      ref: v0.3.0
       subdir: packages/go-io
 ```
 
-You need googoo 0.1.18-go.3 or newer (`brew install spago i-am-the-slime/tap/googoo`) and Go 1.27.
+You need googoo 0.1.18-go.5 or newer (`brew install spago i-am-the-slime/tap/googoo`) and Go 1.27.
 `protoc-gen-purescript` comes with yoga-protobuf, its README says how to build it.
 
 ## Server
