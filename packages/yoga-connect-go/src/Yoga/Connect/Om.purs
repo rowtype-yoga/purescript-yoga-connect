@@ -26,6 +26,7 @@ module Yoga.Connect.Om
   , module Yoga.Connect.Server
   , module Yoga.Connect.Client
   , module Yoga.Connect.Status
+  , module Yoga.Connect.Rejection
   , module Yoga.Go.HTTP.OmIO
   , module Control.Monad.Reader
   ) where
@@ -34,10 +35,11 @@ import Control.Monad.Reader (ask)
 import Yoga.Connect.Client (Connection, connect)
 import Yoga.Connect.Message (type (:=), Message, Named, OneOf)
 import Yoga.Connect.Om.Client (client, clientWithin)
-import Yoga.Connect.Om.Handler (Handler, handle, registerService, registerServiceWith, withoutRequests)
+import Yoga.Connect.Om.Handler (Handler, handle, registerService, registerServiceWith, reject, withoutRequests)
 import Yoga.Connect.Proto (printProto)
 import Yoga.Connect.Protobuf (codecOf, decode, encode)
+import Yoga.Connect.Rejection (WithCode)
 import Yoga.Connect.Schema (BidiStream, ClientStream, ServerStream, Service, Unary)
-import Yoga.Connect.Server (BoundAddress, Host(..), Port(..), Server, createServer, listen, reject)
+import Yoga.Connect.Server (BoundAddress, Host(..), Port(..), Server, createServer, listen)
 import Yoga.Connect.Status (Code(..), ConnectError(..), codeName)
 import Yoga.Go.HTTP.OmIO (OmIO, liftIO, runOmIO)

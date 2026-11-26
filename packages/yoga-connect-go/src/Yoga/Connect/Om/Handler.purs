@@ -24,6 +24,7 @@ module Yoga.Connect.Om.Handler
   , class Handle
   , handle
   , withoutRequests
+  , reject
   , registerService
   , registerServiceWith
   , class RegisterHandlers
@@ -32,7 +33,11 @@ module Yoga.Connect.Om.Handler
 
 import Prelude
 
+import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Monad.Reader (withReaderT)
+import Data.Variant (Variant)
+import Data.Variant as Variant
+import Effect.Exception (Error)
 import Data.Newtype (class Newtype, un)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Effect (Effect)
@@ -44,9 +49,9 @@ import Record.Builder as Builder
 import Type.Proxy (Proxy(..))
 import Yoga.Connect.Protobuf (class MethodMessage, methodCodec)
 import Yoga.Connect.Schema (class ServiceType, BidiStream, ClientStream, ServerStream, Unary, procedureOf)
-import Yoga.Connect.Server (Server, serveMethod)
+import Yoga.Connect.Rejection (class Rejections, rejections)
+import Yoga.Connect.Server (Server, serveRejecting)
 import Yoga.Connect.Service as Connect
-import Yoga.Connect.Status (class Rejection)
 import Yoga.Go.HTTP.Om.API (class PickFields, pickFields)
 import Yoga.Go.HTTP.OmIO (OmIO(..))
 import Yoga.OmIO.Strom (Strom)
@@ -67,13 +72,13 @@ instance
   ( MethodMessage request plainRequest
   , MethodMessage response plainResponse
   , RowToList errors labels
-  , Rejection labels errors
+  , Rejections labels plainErrors
   , Row.Lacks "request" ctx
   , Row.Cons "request" plainRequest ctx withRequest
   ) =>
-  Handle (Unary request response errors) ctx (OmIO (Record withRequest) errors plainResponse) where
+  Handle (Unary request response errors) ctx (OmIO (Record withRequest) plainErrors plainResponse) where
   handle body = Handler \dependencies procedure ->
-    serveMethod dependencies (Connect.unary procedure (methodCodec (Proxy :: Proxy request)) (methodCodec (Proxy :: Proxy response))) answer
+    serveRejecting (rejections (Proxy :: Proxy labels)).encode dependencies (Connect.unary procedure (methodCodec (Proxy :: Proxy request)) (methodCodec (Proxy :: Proxy response))) answer
     where
     answer request = body # providing (Record.insert (Proxy :: Proxy "request") request)
 
@@ -81,13 +86,13 @@ instance
   ( MethodMessage request plainRequest
   , MethodMessage response plainResponse
   , RowToList errors labels
-  , Rejection labels errors
+  , Rejections labels plainErrors
   , Row.Lacks "request" ctx
   , Row.Cons "request" plainRequest ctx withRequest
   ) =>
-  Handle (ServerStream request response errors) ctx (OmIO (Record withRequest) errors (Strom (Record ctx) errors plainResponse)) where
+  Handle (ServerStream request response errors) ctx (OmIO (Record withRequest) plainErrors (Strom (Record ctx) plainErrors plainResponse)) where
   handle body = Handler \dependencies procedure ->
-    serveMethod dependencies (Connect.serverStream procedure (methodCodec (Proxy :: Proxy request)) (methodCodec (Proxy :: Proxy response))) answer
+    serveRejecting (rejections (Proxy :: Proxy labels)).encode dependencies (Connect.serverStream procedure (methodCodec (Proxy :: Proxy request)) (methodCodec (Proxy :: Proxy response))) answer
     where
     answer request = body # providing (Record.insert (Proxy :: Proxy "request") request) # streamed
 
@@ -95,13 +100,13 @@ instance
   ( MethodMessage request plainRequest
   , MethodMessage response plainResponse
   , RowToList errors labels
-  , Rejection labels errors
+  , Rejections labels plainErrors
   , Row.Lacks "requests" ctx
-  , Row.Cons "requests" (Strom (Record ctx) errors plainRequest) ctx withRequests
+  , Row.Cons "requests" (Strom (Record ctx) plainErrors plainRequest) ctx withRequests
   ) =>
-  Handle (ClientStream request response errors) ctx (OmIO (Record withRequests) errors plainResponse) where
+  Handle (ClientStream request response errors) ctx (OmIO (Record withRequests) plainErrors plainResponse) where
   handle body = Handler \dependencies procedure ->
-    serveMethod dependencies (Connect.clientStream procedure (methodCodec (Proxy :: Proxy request)) (methodCodec (Proxy :: Proxy response))) answer
+    serveRejecting (rejections (Proxy :: Proxy labels)).encode dependencies (Connect.clientStream procedure (methodCodec (Proxy :: Proxy request)) (methodCodec (Proxy :: Proxy response))) answer
     where
     answer requests = body # providing (Record.insert (Proxy :: Proxy "requests") requests)
 
@@ -109,15 +114,20 @@ instance
   ( MethodMessage request plainRequest
   , MethodMessage response plainResponse
   , RowToList errors labels
-  , Rejection labels errors
+  , Rejections labels plainErrors
   , Row.Lacks "requests" ctx
-  , Row.Cons "requests" (Strom (Record ctx) errors plainRequest) ctx withRequests
+  , Row.Cons "requests" (Strom (Record ctx) plainErrors plainRequest) ctx withRequests
   ) =>
-  Handle (BidiStream request response errors) ctx (OmIO (Record withRequests) errors (Strom (Record ctx) errors plainResponse)) where
+  Handle (BidiStream request response errors) ctx (OmIO (Record withRequests) plainErrors (Strom (Record ctx) plainErrors plainResponse)) where
   handle body = Handler \dependencies procedure ->
-    serveMethod dependencies (Connect.bidiStream procedure (methodCodec (Proxy :: Proxy request)) (methodCodec (Proxy :: Proxy response))) answer
+    serveRejecting (rejections (Proxy :: Proxy labels)).encode dependencies (Connect.bidiStream procedure (methodCodec (Proxy :: Proxy request)) (methodCodec (Proxy :: Proxy response))) answer
     where
     answer requests = body # providing (Record.insert (Proxy :: Proxy "requests") requests) # streamed
+
+-- | Fails the call with one of the method's errors: `reject @"notFound" "no such symbol"`,
+-- | `reject @"columnFull" 3`. The error row says how it goes over the wire.
+reject :: forall @label payload others err m a. IsSymbol label => Row.Cons label payload others (exception :: Error | err) => MonadThrow (Variant (exception :: Error | err)) m => payload -> m a
+reject payload = throwError (Variant.inj (Proxy :: Proxy label) payload)
 
 -- | Runs what needs only the handler's context, such as reading the requests of a client
 -- | stream to the end: `requests # Strom.runCollect # withoutRequests`.

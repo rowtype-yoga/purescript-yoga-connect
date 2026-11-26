@@ -22,8 +22,6 @@ module Yoga.Connect.Om.Client
   , typedClients
   , class TypedClient
   , typedClient
-  , class Retyped
-  , retyped
   ) where
 
 import Prelude
@@ -44,7 +42,8 @@ import Yoga.Connect.Client (class ClientMethod, Connection, clientMethod)
 import Yoga.Connect.Protobuf (class MethodMessage, methodCodec)
 import Yoga.Connect.Schema (class ServiceType, BidiStream, ClientStream, ServerStream, Unary, procedureOf)
 import Yoga.Connect.Service as Connect
-import Yoga.Connect.Status (class RejectionCode, Code, ConnectError(..), rejectionCode)
+import Yoga.Connect.Rejection (class Rejections, RejectionCodec, rejections)
+import Yoga.Connect.Status (ConnectError(..))
 import Yoga.Go.HTTP.OmIO (OmIO)
 import Yoga.OmIO.Strom (Strom)
 import Yoga.OmIO.Strom as Strom
@@ -105,12 +104,12 @@ instance
   , MethodMessage response plainResponse
   , ClientMethod (Connect.Unary plainRequest plainResponse) ctx err (plainRequest -> OmIO ctx (Failing err) plainResponse)
   , RowToList errors labels
-  , Retyped labels errors
-  , Row.Union errors others (exception :: Error | Failing err)
+  , Rejections labels plainErrors
+  , Row.Union plainErrors others (exception :: Error | Failing err)
   ) =>
   TypedClient (Unary request response errors) ctx err (plainRequest -> OmIO ctx (Failing err) plainResponse) where
   typedClient _ ctx err context procedure connection request =
-    catchError (call request) (throwError <<< typedFailure (Proxy :: Proxy labels))
+    catchError (call request) (throwError <<< typedFailure (rejections (Proxy :: Proxy labels)))
     where
     call = clientMethod ctx err context (Connect.unary procedure (methodCodec (Proxy :: Proxy request)) (methodCodec (Proxy :: Proxy response))) connection
 
@@ -119,12 +118,12 @@ instance
   , MethodMessage response plainResponse
   , ClientMethod (Connect.ServerStream plainRequest plainResponse) ctx err (plainRequest -> Strom ctx (Failing err) plainResponse)
   , RowToList errors labels
-  , Retyped labels errors
-  , Row.Union errors others (exception :: Error | Failing err)
+  , Rejections labels plainErrors
+  , Row.Union plainErrors others (exception :: Error | Failing err)
   ) =>
   TypedClient (ServerStream request response errors) ctx err (plainRequest -> Strom ctx (Failing err) plainResponse) where
   typedClient _ ctx err context procedure connection request =
-    call request # Strom.mapError (typedFailure (Proxy :: Proxy labels))
+    call request # Strom.mapError (typedFailure (rejections (Proxy :: Proxy labels)))
     where
     call = clientMethod ctx err context (Connect.serverStream procedure (methodCodec (Proxy :: Proxy request)) (methodCodec (Proxy :: Proxy response))) connection
 
@@ -133,12 +132,12 @@ instance
   , MethodMessage response plainResponse
   , ClientMethod (Connect.ClientStream plainRequest plainResponse) ctx err (Strom ctx (Failing err) plainRequest -> OmIO ctx (Failing err) plainResponse)
   , RowToList errors labels
-  , Retyped labels errors
-  , Row.Union errors others (exception :: Error | Failing err)
+  , Rejections labels plainErrors
+  , Row.Union plainErrors others (exception :: Error | Failing err)
   ) =>
   TypedClient (ClientStream request response errors) ctx err (Strom ctx (Failing err) plainRequest -> OmIO ctx (Failing err) plainResponse) where
   typedClient _ ctx err context procedure connection requests =
-    catchError (call requests) (throwError <<< typedFailure (Proxy :: Proxy labels))
+    catchError (call requests) (throwError <<< typedFailure (rejections (Proxy :: Proxy labels)))
     where
     call = clientMethod ctx err context (Connect.clientStream procedure (methodCodec (Proxy :: Proxy request)) (methodCodec (Proxy :: Proxy response))) connection
 
@@ -147,44 +146,22 @@ instance
   , MethodMessage response plainResponse
   , ClientMethod (Connect.BidiStream plainRequest plainResponse) ctx err (Strom ctx (Failing err) plainRequest -> Strom ctx (Failing err) plainResponse)
   , RowToList errors labels
-  , Retyped labels errors
-  , Row.Union errors others (exception :: Error | Failing err)
+  , Rejections labels plainErrors
+  , Row.Union plainErrors others (exception :: Error | Failing err)
   ) =>
   TypedClient (BidiStream request response errors) ctx err (Strom ctx (Failing err) plainRequest -> Strom ctx (Failing err) plainResponse) where
   typedClient _ ctx err context procedure connection requests =
-    call requests # Strom.mapError (typedFailure (Proxy :: Proxy labels))
+    call requests # Strom.mapError (typedFailure (rejections (Proxy :: Proxy labels)))
     where
     call = clientMethod ctx err context (Connect.bidiStream procedure (methodCodec (Proxy :: Proxy request)) (methodCodec (Proxy :: Proxy response))) connection
 
 -- | A `connectError` whose code is one of the method's errors, as that error.
 typedFailure
-  :: forall labels errors others err
-   . Retyped labels errors
-  => Row.Union errors others (exception :: Error | Failing err)
-  => Proxy labels
+  :: forall errors others err
+   . Row.Union errors others (exception :: Error | Failing err)
+  => RejectionCodec errors
   -> Variant (exception :: Error | Failing err)
   -> Variant (exception :: Error | Failing err)
-typedFailure labels failure = failure # Variant.on (Proxy :: Proxy "connectError") asDeclared (const failure)
+typedFailure codec failure = failure # Variant.on (Proxy :: Proxy "connectError") asDeclared (const failure)
   where
-  asDeclared (ConnectError { code, message }) = maybe failure Variant.expand (retyped labels code message)
-
--- | The method's error with this code, if it has one.
-class Retyped :: RowList Type -> Row Type -> Constraint
-class Retyped labels errors | labels -> errors where
-  retyped :: Proxy labels -> Code -> String -> Maybe (Variant errors)
-
-instance Retyped RowList.Nil () where
-  retyped _ _ _ = Nothing
-
-instance
-  ( IsSymbol label
-  , RejectionCode label
-  , Retyped tail others
-  , Row.Cons label String others errors
-  , Row.Cons label String () single
-  , Row.Union others single errors
-  ) =>
-  Retyped (RowList.Cons label String tail) errors where
-  retyped _ code message
-    | code == rejectionCode @label = Just (Variant.inj (Proxy :: Proxy label) message)
-    | otherwise = retyped (Proxy :: Proxy tail) code message <#> Variant.expand
+  asDeclared (ConnectError { code, message, details }) = maybe failure Variant.expand (codec.decode code message details)

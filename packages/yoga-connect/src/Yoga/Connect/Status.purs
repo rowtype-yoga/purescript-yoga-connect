@@ -9,6 +9,7 @@ module Yoga.Connect.Status
   , codeName
   , codeFromName
   , ConnectError(..)
+  , ErrorDetail
   , Rejections
   , fromRejection
   , rejection
@@ -28,6 +29,7 @@ import Prim.Row as Row
 import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RowList
 import Type.Proxy (Proxy(..))
+import Yoga.Protobuf.Bytes (Bytes)
 
 -- | The status codes, without `OK`.
 data Code
@@ -134,8 +136,12 @@ codeFromName = case _ of
   "unauthenticated" -> Just Unauthenticated
   _ -> Nothing
 
--- | A failed call, as the client sees it.
-newtype ConnectError = ConnectError { code :: Code, message :: String }
+-- | A failed call, as the client sees it, with the details the server added.
+newtype ConnectError = ConnectError { code :: Code, message :: String, details :: Array ErrorDetail }
+
+-- | A message the server added to a failure: its full type name, `canvas.v1.NameTaken`, and its
+-- | encoding.
+type ErrorDetail = { typeName :: String, bytes :: Bytes }
 
 derive instance Eq ConnectError
 
@@ -238,7 +244,7 @@ rejectWith = rejectionOf (Proxy :: Proxy labels)
 
 -- | The code and message of a handler's rejection.
 rejection :: forall row labels. RowToList row labels => Rejection labels row => Variant row -> ConnectError
-rejection = rejectWith \code message -> ConnectError { code, message }
+rejection = rejectWith \code message -> ConnectError { code, message, details: [] }
 
 fromRejection :: Variant Rejections -> ConnectError
 fromRejection = match
@@ -260,4 +266,4 @@ fromRejection = match
   , unauthenticated: failed Unauthenticated
   }
   where
-  failed code message = ConnectError { code, message }
+  failed code message = ConnectError { code, message, details: [] }

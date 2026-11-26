@@ -31,6 +31,7 @@ import Prelude
 
 import Control.Monad.Error.Class (throwError, try)
 import Data.Either (Either(..))
+import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol)
 import Data.Variant (Variant)
@@ -208,18 +209,19 @@ sendTo call codec request = IO (Codec.encodeEffect codec request >>= runEffectFn
 
 decodeResponse :: forall ctx err response. Codec response -> Bytes -> OmIO ctx (Failing err) response
 decodeResponse codec bytes = case Codec.decode codec bytes of
-  Left problem -> throwError (connectError (ConnectError { code: Internal, message: "the response doesn't decode: " <> show problem }))
+  Left problem -> throwError (connectError (ConnectError { code: Internal, message: "the response doesn't decode: " <> show problem, details: [] }))
   Right response -> pure response
 
 connectError :: forall err. ConnectError -> Variant (exception :: Error | Failing err)
 connectError failure = Variant.inj (Proxy :: Proxy "connectError") failure
 
-failedWith :: forall a. Int -> String -> Either ConnectError a
-failedWith code message = Left (ConnectError { code: codeFromNumber code, message })
+-- | A failure, with the type names and encodings of its details.
+failedWith :: forall a. Int -> String -> Array String -> Array Bytes -> Either ConnectError a
+failedWith code message typeNames encodings = Left (ConnectError { code: codeFromNumber code, message, details: Array.zipWith { typeName: _, bytes: _ } typeNames encodings })
 
 type Call = ClientCall
 
-foreign import callUnaryImpl :: EffectFn6 (Int -> String -> Either ConnectError Bytes) (Bytes -> Either ConnectError Bytes) Context Connection String Bytes (Either ConnectError Bytes)
+foreign import callUnaryImpl :: EffectFn6 (Int -> String -> Array String -> Array Bytes -> Either ConnectError Bytes) (Bytes -> Either ConnectError Bytes) Context Connection String Bytes (Either ConnectError Bytes)
 
 -- | Opens a call within the context: cancelling it cancels the call, and its deadline is the
 -- | call's.
@@ -233,14 +235,14 @@ foreign import sendImpl :: EffectFn2 ClientCall Bytes Boolean
 -- | Tells the server that all requests are sent.
 foreign import closeSendingImpl :: EffectFn1 ClientCall Unit
 
-foreign import closeAndReceiveImpl :: EffectFn3 (Int -> String -> Either ConnectError Bytes) (Bytes -> Either ConnectError Bytes) ClientCall (Either ConnectError Bytes)
+foreign import closeAndReceiveImpl :: EffectFn3 (Int -> String -> Array String -> Array Bytes -> Either ConnectError Bytes) (Bytes -> Either ConnectError Bytes) ClientCall (Either ConnectError Bytes)
 
 -- | `true` with a response, `false` once there are no more.
 foreign import receiveImpl :: EffectFn1 ClientCall Boolean
 foreign import receivedImpl :: EffectFn1 ClientCall Bytes
 
 -- | How the call ended, once `receiveImpl` says there are no more responses.
-foreign import outcomeImpl :: EffectFn3 (Int -> String -> Either ConnectError Unit) (Either ConnectError Unit) ClientCall (Either ConnectError Unit)
+foreign import outcomeImpl :: EffectFn3 (Int -> String -> Array String -> Array Bytes -> Either ConnectError Unit) (Either ConnectError Unit) ClientCall (Either ConnectError Unit)
 
 -- | Ends the call early.
 foreign import closeImpl :: EffectFn1 ClientCall Unit

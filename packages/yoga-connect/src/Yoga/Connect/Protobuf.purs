@@ -25,11 +25,13 @@ module Yoga.Connect.Protobuf
   , methodName
   , class MessageFields
   , readFields
+  , notedFields
   , memberShapes
   , class FieldWriters
   , fieldWriters
   , class Alternatives
   , readAlternatives
+  , notedAlternatives
   , alternativeWriter
   , firstAlternative
   , alternativeShapes
@@ -42,6 +44,8 @@ module Yoga.Connect.Protobuf
   , enumFromIndex
   , enumToIndex
   , FieldCodec
+  , FieldReader
+  , Noted
   , ValueCodec
   , NumberedWriter
   , MessageShape
@@ -55,7 +59,7 @@ import Prelude
 
 import Data.Array as Array
 import Data.Either (Either(..))
-import Data.Function.Uncurried (Fn3, mkFn3, runFn3)
+import Data.Function.Uncurried (Fn3, Fn4, mkFn3, mkFn4, runFn3, runFn4)
 import Data.Generic.Rep (class Generic, Constructor(..), NoArguments(..), Sum(..), from, to)
 import Data.Int.Bits (shl, zshr, (.&.), (.|.))
 import Data.Int64 (Int64)
@@ -83,6 +87,8 @@ import Yoga.Protobuf.Codec (Codec(..), codec)
 import Yoga.Protobuf.Codec as Codec
 import Yoga.Protobuf.Decode (Reader)
 import Yoga.Protobuf.Error (DecodeError(..), failure)
+import Yoga.Protobuf.Fields (Fields)
+import Yoga.Protobuf.Fields as Fields
 import Yoga.Protobuf.Repeated (Repeated)
 import Yoga.Protobuf.Repeated as Repeated
 import Yoga.Protobuf.Unsigned (UInt32(..), UInt64(..))
@@ -110,11 +116,8 @@ class ProtobufMessage message plain | message -> plain where
 instance (RowToList fields list, MessageFields list plain, FieldWriters list plain) => ProtobufMessage (Record fields) (Record plain) where
   messageCodec _ = codec read write
     where
-    members = memberShapes (Proxy :: Proxy list)
     readAll = readFields (Proxy :: Proxy list)
-    read
-      | Array.null members = mkFn3 \input start end -> runFn3 validated input start end *> (runFn3 readAll input start end <#> Builder.buildFromScratch)
-      | otherwise = mkFn3 \input start end -> runFn3 readAll input start end <#> Builder.buildFromScratch
+    read = notingFirst (notedFields (Proxy :: Proxy list)) (mkFn4 \input fields start end -> runFn4 readAll input fields start end <#> Builder.buildFromScratch)
     writers = fieldWriters (Proxy :: Proxy list) # Array.sortWith (_.number >>> negate)
     write writer message = foreachE writers \field -> field.write writer message
   messageShape _ = memberShapes (Proxy :: Proxy list)
@@ -124,7 +127,7 @@ instance (RowToList alternatives list, Alternatives list plain) => ProtobufMessa
     where
     readLast = readAlternatives (Proxy :: Proxy list)
     unset = (firstAlternative (Proxy :: Proxy list)).value
-    read = mkFn3 \input start end -> runFn3 readLast input start end <#> maybe unset (\(_ /\ chosen) -> chosen)
+    read = notingFirst (notedAlternatives (Proxy :: Proxy list)) (mkFn4 \input fields start end -> runFn4 readLast input fields start end <#> maybe unset (\(_ /\ chosen) -> chosen))
   messageShape _ = [ Choice "kind" (alternativeShapes (Proxy :: Proxy list)) ]
 
 instance ProtobufMessage message plain => ProtobufMessage (Named name message) plain where
@@ -157,7 +160,7 @@ else instance Field field plain => MethodMessage field plain where
   methodCodec _ = codec read write
     where
     value = fieldCodec (Proxy :: Proxy field) 1
-    read = value.read
+    read = notingFirst value.noted value.read
     write writer plain = value.write writer plain
   methodShape _ = [ Single { name: "value", number: 1, cardinality: (fieldCodec (Proxy :: Proxy field) 1).cardinality, kind: (fieldCodec (Proxy :: Proxy field) 1).kind } ]
   methodName _ = Nothing
@@ -190,11 +193,14 @@ type NumberedWriter message = { number :: Int, write :: Writer -> message -> Eff
 -- | The fields of a message, by their row list: how to read them, and what they are.
 class MessageFields :: RowList Type -> Row Type -> Constraint
 class MessageFields list plain | list -> plain where
-  readFields :: Proxy list -> Fn3 Bytes Int Int (Either DecodeError (Builder {} (Record plain)))
+  readFields :: Proxy list -> FieldReader (Builder {} (Record plain))
+  -- | The fields whose last value is noted in the one pass over a message.
+  notedFields :: Proxy list -> Noted
   memberShapes :: Proxy list -> Array Member
 
 instance MessageFields RowList.Nil () where
-  readFields _ = mkFn3 \_ _ _ -> Right identity
+  readFields _ = mkFn4 \_ _ _ _ -> Right identity
+  notedFields _ = []
   memberShapes _ = []
 
 else instance
@@ -206,13 +212,14 @@ else instance
   , Row.Lacks label plainTail
   ) =>
   MessageFields (RowList.Cons label (number := field) tail) plain where
-  readFields _ = mkFn3 \input start end -> do
-    found <- runFn3 this.read input start end
-    rest <- runFn3 readRest input start end
+  readFields _ = mkFn4 \input fields start end -> do
+    found <- runFn4 this.read input fields start end
+    rest <- runFn4 readRest input fields start end
     pure (Builder.insert (Proxy :: Proxy label) found <<< rest)
     where
     this = fieldCodec (Proxy :: Proxy field) (reflectType (Proxy :: Proxy number))
     readRest = readFields (Proxy :: Proxy tail)
+  notedFields _ = (fieldCodec (Proxy :: Proxy field) (reflectType (Proxy :: Proxy number))).noted <> notedFields (Proxy :: Proxy tail)
   memberShapes _ = Array.cons (Single { name: reflectSymbol (Proxy :: Proxy label), number, cardinality: this.cardinality, kind: this.kind }) (memberShapes (Proxy :: Proxy tail))
     where
     number = reflectType (Proxy :: Proxy number)
@@ -227,14 +234,15 @@ else instance
   , Row.Lacks label plainTail
   ) =>
   MessageFields (RowList.Cons label (OneOf alternatives) tail) plain where
-  readFields _ = mkFn3 \input start end -> do
-    found <- runFn3 readLast input start end
-    rest <- runFn3 readRest input start end
+  readFields _ = mkFn4 \input fields start end -> do
+    found <- runFn4 readLast input fields start end
+    rest <- runFn4 readRest input fields start end
     pure (Builder.insert (Proxy :: Proxy label) (maybe unset (\(_ /\ chosen) -> chosen) found) <<< rest)
     where
     readLast = readAlternatives (Proxy :: Proxy alternativeList)
     unset = (firstAlternative (Proxy :: Proxy alternativeList)).value
     readRest = readFields (Proxy :: Proxy tail)
+  notedFields _ = notedAlternatives (Proxy :: Proxy alternativeList) <> notedFields (Proxy :: Proxy tail)
   memberShapes _ = Array.cons (Choice (reflectSymbol (Proxy :: Proxy label)) (alternativeShapes (Proxy :: Proxy alternativeList))) (memberShapes (Proxy :: Proxy tail))
 
 else instance
@@ -244,7 +252,8 @@ else instance
       )
   ) =>
   MessageFields (RowList.Cons label field tail) plain where
-  readFields _ = mkFn3 \_ _ _ -> unsafeCrashWith "unreachable"
+  readFields _ = mkFn4 \_ _ _ _ -> unsafeCrashWith "unreachable"
+  notedFields _ = []
   memberShapes _ = []
 
 -- | How to write each field of a message, out of the whole record.
@@ -289,7 +298,8 @@ else instance FieldWriters (RowList.Cons label field tail) whole where
 class Alternatives :: RowList Type -> Row Type -> Constraint
 class Alternatives list plain | list -> plain where
   -- | Where the last alternative came, and its value.
-  readAlternatives :: Proxy list -> Fn3 Bytes Int Int (Either DecodeError (Maybe (Int /\ Variant plain)))
+  readAlternatives :: Proxy list -> FieldReader (Maybe (Int /\ Variant plain))
+  notedAlternatives :: Proxy list -> Noted
   alternativeWriter :: Proxy list -> Writer -> Variant plain -> Effect Unit
   -- | What a message without any of them decodes to: the lowest-numbered alternative at its default.
   firstAlternative :: Proxy list -> { number :: Int, value :: Variant plain }
@@ -302,9 +312,10 @@ instance
   , Row.Cons label plainField () plain
   ) =>
   Alternatives (RowList.Cons label (number := field) RowList.Nil) plain where
-  readAlternatives _ = mkFn3 \input start end -> runFn3 readLast input start end <#> map \(at /\ found) -> at /\ Variant.inj (Proxy :: Proxy label) found
+  readAlternatives _ = mkFn4 \input fields start end -> runFn4 readLast input fields start end <#> map \(at /\ found) -> at /\ Variant.inj (Proxy :: Proxy label) found
     where
     readLast = lastOccurrence (valueCodec (Proxy :: Proxy field)) (reflectType (Proxy :: Proxy number))
+  notedAlternatives _ = notedOnce (valueCodec (Proxy :: Proxy field)) (reflectType (Proxy :: Proxy number))
   alternativeWriter _ = \writer -> Variant.on (Proxy :: Proxy label) (writeAlternative this number writer) Variant.case_
     where
     number = reflectType (Proxy :: Proxy number)
@@ -322,9 +333,9 @@ else instance
   , Row.Union plainTail single plain
   ) =>
   Alternatives (RowList.Cons label (number := field) tail) plain where
-  readAlternatives _ = mkFn3 \input start end -> do
-    here <- runFn3 readLast input start end
-    rest <- runFn3 readRest input start end
+  readAlternatives _ = mkFn4 \input fields start end -> do
+    here <- runFn4 readLast input fields start end
+    rest <- runFn4 readRest input fields start end
     pure (later (here <#> map (Variant.inj (Proxy :: Proxy label))) (rest <#> map Variant.expand))
     where
     readLast = lastOccurrence (valueCodec (Proxy :: Proxy field)) (reflectType (Proxy :: Proxy number))
@@ -332,6 +343,7 @@ else instance
     later (Just (at /\ chosen)) (Just (otherAt /\ other)) = Just (if at > otherAt then at /\ chosen else otherAt /\ other)
     later (Just found) Nothing = Just found
     later Nothing other = other
+  notedAlternatives _ = notedOnce (valueCodec (Proxy :: Proxy field)) (reflectType (Proxy :: Proxy number)) <> notedAlternatives (Proxy :: Proxy tail)
   alternativeWriter _ = \writer -> Variant.on (Proxy :: Proxy label) (writeAlternative this number writer) (writeRest writer)
     where
     number = reflectType (Proxy :: Proxy number)
@@ -352,7 +364,8 @@ writeAlternative value number writer chosen = do
 
 -- | How a field reads and writes its value, given its number, and what the `.proto` says it is.
 type FieldCodec a =
-  { read :: Reader a
+  { read :: FieldReader a
+  , noted :: Noted
   , write :: Writer -> a -> Effect Unit
   , cardinality :: Cardinality
   , kind :: ValueKind
@@ -364,15 +377,15 @@ class Field field plain | field -> plain where
   fieldCodec :: Proxy field -> Int -> FieldCodec plain
 
 instance Value value plain => Field (Array value) (Array plain) where
-  fieldCodec _ number = { read: repeated value number, write: writeRepeated value number, cardinality: Repeated, kind: value.kind }
+  fieldCodec _ number = { read: ignoringNoted (repeated value number), noted: [], write: writeRepeated value number, cardinality: Repeated, kind: value.kind }
     where
     value = valueCodec (Proxy :: Proxy value)
 else instance Value value plain => Field (Maybe value) (Maybe plain) where
-  fieldCodec _ number = { read: optional value number, write: writeOptional value number, cardinality: Optional, kind: value.kind }
+  fieldCodec _ number = { read: optional value number, noted: notedOnce value number, write: writeOptional value number, cardinality: Optional, kind: value.kind }
     where
     value = valueCodec (Proxy :: Proxy value)
 else instance Value value plain => Field value plain where
-  fieldCodec _ number = { read: once value number, write: writeOnce value number, cardinality: Once, kind: value.kind }
+  fieldCodec _ number = { read: once value number, noted: notedOnce value number, write: writeOnce value number, cardinality: Once, kind: value.kind }
     where
     value = valueCodec (Proxy :: Proxy value)
 
@@ -484,22 +497,78 @@ instance (EnumConstructors left, EnumConstructors right) => EnumConstructors (Su
 
 -- Reading fields.
 
--- | A field that comes once: the last time it comes counts, and its default if it doesn't.
-once :: forall a. ValueCodec a -> Int -> Reader a
-once value number = foldField number value.default \kept input tag position end ->
-  if wireTypeOf tag == value.wireType then runFn3 value.read input position end
-  else skipped kept input tag position end
+-- | A field that comes once: the last time it comes counts, and its default if it doesn't. Its
+-- | position is noted in the one pass over the message, unless its number is too big to note.
+once :: forall a. ValueCodec a -> Int -> FieldReader a
+once value number
+  | notable number = mkFn4 \input fields _ end -> do
+      let position = Fields.at fields number
+      if position < 0 then Right value.default else runFn3 value.read input position end <#> \(found /\ _) -> found
+  | otherwise = ignoringNoted scanned
+  where
+  scanned = foldField number value.default \kept input tag position end ->
+    if wireTypeOf tag == value.wireType then runFn3 value.read input position end
+    else skipped kept input tag position end
 
-optional :: forall a. ValueCodec a -> Int -> Reader (Maybe a)
-optional value number = foldField number Nothing \kept input tag position end ->
-  if wireTypeOf tag == value.wireType then runFn3 value.read input position end <#> \(found /\ next) -> Just found /\ next
-  else skipped kept input tag position end
+optional :: forall a. ValueCodec a -> Int -> FieldReader (Maybe a)
+optional value number = mkFn4 \input fields start end -> runFn4 lastOne input fields start end <#> map \(_ /\ found) -> found
+  where
+  lastOne = lastOccurrence value number
 
--- | Where the field came last, and its value then: for the alternatives of a oneof.
-lastOccurrence :: forall a. ValueCodec a -> Int -> Reader (Maybe (Int /\ a))
-lastOccurrence value number = foldField number Nothing \kept input tag position end ->
-  if wireTypeOf tag == value.wireType then runFn3 value.read input position end <#> \(found /\ next) -> Just (position /\ found) /\ next
-  else skipped kept input tag position end
+-- | Where the field came last, and its value then: for optional fields and the alternatives of
+-- | a oneof.
+lastOccurrence :: forall a. ValueCodec a -> Int -> FieldReader (Maybe (Int /\ a))
+lastOccurrence value number
+  | notable number = mkFn4 \input fields _ end -> do
+      let position = Fields.at fields number
+      if position < 0 then Right Nothing else runFn3 value.read input position end <#> \(found /\ _) -> Just (position /\ found)
+  | otherwise = ignoringNoted scanned
+  where
+  scanned = foldField number Nothing \kept input tag position end ->
+    if wireTypeOf tag == value.wireType then runFn3 value.read input position end <#> \(found /\ next) -> Just (position /\ found) /\ next
+    else skipped kept input tag position end
+
+-- | Reads a field out of the positions noted in a pass over the message, and the bytes.
+type FieldReader a = Fn4 Bytes Fields Int Int (Either DecodeError a)
+
+-- | The fields a message notes the last position of, and the wire type each one has to have.
+type Noted = Array { number :: Int, wireType :: Int }
+
+notedOnce :: forall a. ValueCodec a -> Int -> Noted
+notedOnce value number = if notable number then [ { number, wireType: value.wireType } ] else []
+
+-- | Numbers up to this one are noted in a table; a field with a bigger number is looked for in a
+-- | pass of its own.
+notable :: Int -> Boolean
+notable number = number < 1024
+
+-- | A reader of a field that's looked for in a pass of its own.
+ignoringNoted :: forall a. Reader a -> FieldReader a
+ignoringNoted read = mkFn4 \input _ start end -> runFn3 read input start end
+
+-- | Reads a message: one pass over its fields, which checks they're whole and notes where each
+-- | noted field came last, then `read` takes each field from there.
+notingFirst :: forall a. Noted -> FieldReader a -> Reader a
+notingFirst noted read = mkFn3 \input start end -> do
+  fields <- runFn3 (noteAll wireTypes) input start end
+  runFn4 read input fields start end
+  where
+  wireTypes = Array.foldl (\table { number, wireType } -> Array.updateAt number wireType table # fromMaybe table) (Array.replicate (size + 1) (-1)) noted
+  size = Array.foldl (\biggest { number } -> max biggest number) 0 noted
+
+noteAll :: Array Int -> Reader Fields
+noteAll wireTypes = mkFn3 \input start end -> do
+  let
+    loop position fields
+      | position >= end = Right fields
+      | otherwise = do
+          let afterTag = Wire.varintEnd input position end
+          if afterTag < 0 then Left (failure afterTag position)
+          else do
+            let tag = Wire.varint32 input position
+            let next = Wire.skip input tag afterTag end
+            if next < 0 then Left (failure next afterTag) else loop next (Fields.note fields wireTypes tag afterTag)
+  loop start (Fields.new input (Array.length wireTypes))
 
 -- | Each value as it comes, packed or one per tag, whichever the other side wrote.
 repeated :: forall a. ValueCodec a -> Int -> Reader (Array a)
@@ -538,10 +607,6 @@ foldField number initial step = mkFn3 \input start end -> do
               let next = Wire.skip input tag afterTag end
               if next < 0 then Left (failure next afterTag) else loop next kept
   loop start initial
-
--- | Checks that the fields are whole, for a message without any it knows.
-validated :: Reader Unit
-validated = foldField (-1) unit \kept input tag position end -> skipped kept input tag position end
 
 skipped :: forall kept. kept -> Bytes -> Int -> Int -> Int -> Either DecodeError (kept /\ Int)
 skipped kept input tag position end = do

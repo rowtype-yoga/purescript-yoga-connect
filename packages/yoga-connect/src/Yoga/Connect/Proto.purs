@@ -7,7 +7,8 @@
 -- | A method's messages are `WatchRequest` and `WatchResponse`, unless `Named` names them. A
 -- | nested message or enum is named after its field, or by `Named`, and goes at the top of the
 -- | file when every one of that name is the same, inside the message that has it when they
--- | differ. Field names are in snake case, so that their JSON names are the record's labels
+-- | differ. An error that carries a value has a message of its own, `ColumnFull`, for the detail
+-- | it goes out with. Field names are in snake case, so that their JSON names are the record's labels
 -- | again: `averagePrice` is `average_price = 3`, which JSON calls `averagePrice`.
 module Yoga.Connect.Proto
   ( printProto
@@ -55,10 +56,10 @@ printService fullName methods = String.joinWith "\n" (Array.concat [ header, [ s
   requestOf name schema = schema.requestName # fromMaybe (name <> "Request")
   responseOf name schema = schema.responseName # fromMaybe (name <> "Response")
 
-  ownMessages = Array.nubBy (comparing fst') (methods >>= \{ name, schema } -> [ requestOf name schema /\ schema.request, responseOf name schema /\ schema.response ])
+  ownMessages = Array.nubBy (comparing fst') (methods >>= \{ name, schema } -> [ requestOf name schema /\ schema.request, responseOf name schema /\ schema.response ] <> (schema.errors <#> \error -> error.name /\ error.shape))
   methodMessages = ownMessages <#> \(name /\ shape) -> printMessage hoisted "" name shape
 
-  definitions = methods >>= \{ schema } -> nestedIn schema.request <> nestedIn schema.response
+  definitions = methods >>= \{ schema } -> nestedIn schema.request <> nestedIn schema.response <> (schema.errors >>= \error -> nestedIn error.shape)
   hoisted = Map.fromFoldableWith (\left right -> if left == right then left else Conflicting) (definitions <#> map Single')
     # Map.mapMaybe case _ of
         Single' definition -> Just definition

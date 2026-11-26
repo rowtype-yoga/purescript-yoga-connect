@@ -18,7 +18,7 @@ The whole service is a type, in [src/Cursors/Service.purs](src/Cursors/Service.p
 
 ```purescript
 type Canvas = Service "canvas.v1.Canvas"
-  { join :: BidiStream Gesture Scene (alreadyExists :: String, invalidArgument :: String)
+  { join :: BidiStream Gesture Scene (nameTaken :: String, invalidArgument :: String)
   }
 
 type Gesture = Named "Gesture" (OneOf
@@ -66,7 +66,8 @@ after the name: `-- ada http://127.0.0.1:50060`.
 Stop the server while clients are open and they say they're joining again; start it again and
 they're back (on an empty canvas, the server keeps it in memory).
 
-A name that's taken gets turned down with `ALREADY_EXISTS`, and the client says so:
+A name that's taken gets turned down with `nameTaken`, an error of the service's own (other gRPC
+clients see `FAILED_PRECONDITION` and a `NameTaken` detail), and the client says so:
 
 ```
 ● ada  joining again, ada is here already, pick another name

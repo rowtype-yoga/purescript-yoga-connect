@@ -50,8 +50,15 @@ serveCanvas :: Room -> Port -> IO BoundAddress
 serveCanvas room port = do
   server <- createServer # liftEffect
   registerServiceWith @Canvas { room } { join } server # liftEffect
-  _ <- forkIO (runOmIO unit (Strom.every (Milliseconds 25.0) # Strom.forEach \_ -> sendWhatPiledUp room # liftIO) # void)
+  _ <- forkIO (everyTick (sendWhatPiledUp room))
   listen { host: Host "127.0.0.1", port } server
+
+-- | Runs the action every 25 milliseconds, for as long as the server runs.
+everyTick :: IO Unit -> IO Unit
+everyTick action = void (runOmIO unit ticking)
+  where
+  ticking :: OmIO Unit () Unit
+  ticking = Strom.every (Milliseconds 25.0) # Strom.forEach \_ -> action # liftIO
 
 -- | Says hello, then moves and draws until the participant hangs up, which is when they leave.
 join :: Handler Joining (room :: Room)
@@ -77,7 +84,7 @@ follow room visit = Variant.match
       when (isJust already) (reject @"invalidArgument" "you said hello already")
       when (name == "") (reject @"invalidArgument" "say who you are")
       welcomed <- welcome room visit name # liftIO
-      unless welcomed (reject @"alreadyExists" (name <> " is here already, pick another name"))
+      unless welcomed (reject @"nameTaken" (name <> " is here already, pick another name"))
   , moved: \at -> asSomeone \name -> atomicModifyIORef' room (\canvas -> moveTo name at canvas /\ unit) # liftIO
   , drew: \cell -> asSomeone \_ -> atomicModifyIORef' room (\canvas -> canvas { cells = Map.insert (cell.x /\ cell.y) cell.color canvas.cells, drawn = Array.snoc canvas.drawn cell } /\ unit) # liftIO
   }
@@ -161,4 +168,4 @@ type Visit = { outbox :: Chan Scene, name :: IORef (Maybe String) }
 newRoom :: IO Room
 newRoom = newIORef { people: Map.empty, cells: Map.empty, moves: Map.empty, drawn: [] }
 
-type Failures = (alreadyExists :: String, invalidArgument :: String)
+type Failures = (nameTaken :: String, invalidArgument :: String)

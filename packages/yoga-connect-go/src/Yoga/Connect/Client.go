@@ -47,7 +47,7 @@ func (c *connection) client(procedure string) *connect.Client[[]byte, []byte] {
 	return existing.(*connect.Client[[]byte, []byte])
 }
 
-func CallUnaryImpl[R any](failed func(int) func(string) R, succeeded func([]byte) R, ctx context.Context, c *connection, procedure string, request []byte) R {
+func CallUnaryImpl[R any](failed func(int) func(string) func([]string) func([][]byte) R, succeeded func([]byte) R, ctx context.Context, c *connection, procedure string, request []byte) R {
 	response, err := c.client(procedure).CallUnary(ctx, connect.NewRequest(&request))
 	if err != nil {
 		return failure(failed, err)
@@ -86,7 +86,7 @@ func CloseSendingImpl(call *clientCall) {
 	call.bidiStream.CloseRequest()
 }
 
-func CloseAndReceiveImpl[R any](failed func(int) func(string) R, succeeded func([]byte) R, call *clientCall) R {
+func CloseAndReceiveImpl[R any](failed func(int) func(string) func([]string) func([][]byte) R, succeeded func([]byte) R, call *clientCall) R {
 	response, err := call.clientStream.CloseAndReceive()
 	if err != nil {
 		return failure(failed, err)
@@ -119,7 +119,7 @@ func ReceiveImpl(call *clientCall) bool {
 
 func ReceivedImpl(call *clientCall) []byte { return call.received }
 
-func OutcomeImpl[R any](failed func(int) func(string) R, finished R, call *clientCall) R {
+func OutcomeImpl[R any](failed func(int) func(string) func([]string) func([][]byte) R, finished R, call *clientCall) R {
 	CloseImpl(call)
 	if call.failure != nil {
 		return failure(failed, call.failure)
@@ -136,10 +136,17 @@ func CloseImpl(call *clientCall) {
 	}
 }
 
-func failure[R any](failed func(int) func(string) R, err error) R {
+// failure makes a failure with failed out of the code, the message, and the type names and
+// encodings of the details.
+func failure[R any](failed func(int) func(string) func([]string) func([][]byte) R, err error) R {
 	var connectError *connect.Error
 	if errors.As(err, &connectError) {
-		return failed(int(connectError.Code()))(connectError.Message())
+		names, values := []string{}, [][]byte{}
+		for _, detail := range connectError.Details() {
+			names = append(names, detail.Type())
+			values = append(values, detail.Bytes())
+		}
+		return failed(int(connectError.Code()))(connectError.Message())(names)(values)
 	}
-	return failed(int(connect.CodeUnknown))(err.Error())
+	return failed(int(connect.CodeUnknown))(err.Error())([]string{})([][]byte{})
 }

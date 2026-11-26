@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/types/known/anypb"
 	"github.com/i-am-the-slime/iris-go/eventloop"
 )
 
@@ -151,6 +152,19 @@ func FailImpl(c *call, code int, message string) {
 	if c.failure == nil {
 		c.failure = connect.NewError(connect.Code(code), errors.New(message))
 	}
+}
+
+// FailWithDetailImpl is FailImpl with an error detail: a message of the type, which the
+// service's clients read back into the method's error.
+func FailWithDetailImpl(c *call, code int, message string, typeName string, value []byte) {
+	if c.failure != nil {
+		return
+	}
+	failure := connect.NewError(connect.Code(code), errors.New(message))
+	if detail, err := connect.NewErrorDetail(&anypb.Any{TypeUrl: "type.googleapis.com/" + typeName, Value: value}); err == nil {
+		failure.AddDetail(detail)
+	}
+	c.failure = failure
 }
 
 // ListenImpl binds the address and serves HTTP/1.1 and HTTP/2 without TLS, which gRPC clients

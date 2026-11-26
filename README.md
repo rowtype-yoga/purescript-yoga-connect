@@ -75,6 +75,22 @@ Handlers and clients only ever see plain records: a `Quote` is
 | `ClientStream req res err` | `OmIO { requests :: Strom (Record ctx) err req \| ctx } err res` |
 | `BidiStream req res err` | `OmIO { requests :: Strom (Record ctx) err req \| ctx } err (Strom (Record ctx) err res)` |
 
+An error doesn't have to be a gRPC code. Any label works, with any value a field can have:
+
+```purescript
+type Playing = BidiStream Move Event
+  ( notYourTurn :: String
+  , columnFull :: Int
+  , nameTaken :: WithCode "alreadyExists" String
+  , notFound :: String
+  )
+```
+
+`notFound :: String` is plain `NOT_FOUND` with its message. The others are `FAILED_PRECONDITION`
+(or the code `WithCode` says) with their value as an error detail, a `ColumnFull` message in the
+`.proto`, so `reject @"columnFull" 3` on the server is `columnFull` with `3` on the client, and
+grpcurl shows the detail.
+
 A client is a record of calls, and fails with the method's own errors, so a `NOT_FOUND` from the
 server is your `notFound` with its message:
 
@@ -116,15 +132,15 @@ workspace:
   extraPackages:
     yoga-connect:
       git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
-      ref: v0.2.0
+      ref: v0.3.0
       subdir: packages/yoga-connect
     yoga-connect-go:
       git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
-      ref: v0.2.0
+      ref: v0.3.0
       subdir: packages/yoga-connect-go
     yoga-strom-io:
       git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
-      ref: v0.2.0
+      ref: v0.3.0
       subdir: packages/yoga-strom-io
     yoga-protobuf:
       git: https://github.com/rowtype-yoga/purescript-yoga-protobuf.git

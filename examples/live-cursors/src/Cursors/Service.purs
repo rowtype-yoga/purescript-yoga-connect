@@ -15,7 +15,7 @@ type Canvas = Service "canvas.v1.Canvas"
   }
 
 -- | Say hello with a name, then move and draw. The first scene back is the canvas as it is.
-type Joining = BidiStream Gesture Scene (alreadyExists :: String, invalidArgument :: String)
+type Joining = BidiStream Gesture Scene (nameTaken :: String, invalidArgument :: String)
 
 type Gesture = Named "Gesture" (OneOf
   ( hello :: 1 := Message { name :: 1 := String }

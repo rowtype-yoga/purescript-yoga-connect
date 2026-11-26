@@ -27,9 +27,9 @@ spec = describe "Yoga.Connect.Status" do
 
   it "turns a handler's rejection into the code of its label" do
     rejection (inj (Proxy :: Proxy "notFound") "no such user" :: HandlerRejections)
-      `shouldEqual` ConnectError { code: NotFound, message: "no such user" }
+      `shouldEqual` ConnectError { code: NotFound, message: "no such user", details: [] }
     rejection (inj (Proxy :: Proxy "permissionDenied") "not yours" :: HandlerRejections)
-      `shouldEqual` ConnectError { code: PermissionDenied, message: "not yours" }
+      `shouldEqual` ConnectError { code: PermissionDenied, message: "not yours", details: [] }
   where
   everyCode =
     [ Canceled, Unknown, InvalidArgument, DeadlineExceeded, NotFound, AlreadyExists, PermissionDenied

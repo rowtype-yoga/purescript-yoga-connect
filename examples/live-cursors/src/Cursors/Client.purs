@@ -135,7 +135,7 @@ joinInto settings gestures arrivals context = do
 
 describeFailure :: Variant (exception :: Error | Failures) -> String
 describeFailure = Variant.match
-  { alreadyExists: identity
+  { nameTaken: identity
   , invalidArgument: identity
   , connectError: \(ConnectError { code }) -> codeName code
   , exception: message
@@ -197,4 +197,4 @@ faint = Fg C.squid
 alarm :: Sx
 alarm = Fg C.coral
 
-type Failures = (alreadyExists :: String, invalidArgument :: String, connectError :: ConnectError)
+type Failures = (nameTaken :: String, invalidArgument :: String, connectError :: ConnectError)

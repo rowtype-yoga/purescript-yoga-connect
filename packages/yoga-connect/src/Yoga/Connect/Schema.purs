@@ -47,6 +47,7 @@ import Record.Builder as Builder
 import Type.Proxy (Proxy(..))
 import Data.Maybe (Maybe)
 import Yoga.Connect.Protobuf (class MethodMessage, MessageShape, methodCodec, methodName, methodShape)
+import Yoga.Connect.Rejection (class Rejections, ErrorShape, rejections)
 import Yoga.Connect.Service as Connect
 
 -- | A service called `name`, such as `"ticker.v1.Ticker"`, with a record of its methods.
@@ -117,6 +118,7 @@ type MethodShape =
   , response :: MessageShape
   , requestName :: Maybe String
   , responseName :: Maybe String
+  , errors :: Array ErrorShape
   }
 
 -- | A method kind, as the route and codecs yoga-connect's runtime needs.
@@ -125,21 +127,21 @@ class Method method connectMethod | method -> connectMethod where
   connectMethod :: Proxy method -> String -> connectMethod
   methodSchema :: Proxy method -> MethodShape
 
-instance (MethodMessage request plainRequest, MethodMessage response plainResponse) => Method (Unary request response errors) (Connect.Unary plainRequest plainResponse) where
+instance (MethodMessage request plainRequest, MethodMessage response plainResponse, RowToList errors errorList, Rejections errorList plainErrors) => Method (Unary request response errors) (Connect.Unary plainRequest plainResponse) where
   connectMethod _ procedure = Connect.unary procedure (methodCodec (Proxy :: Proxy request)) (methodCodec (Proxy :: Proxy response))
-  methodSchema _ = { clientStreams: false, serverStreams: false, request: methodShape (Proxy :: Proxy request), response: methodShape (Proxy :: Proxy response), requestName: methodName (Proxy :: Proxy request), responseName: methodName (Proxy :: Proxy response) }
+  methodSchema _ = { clientStreams: false, serverStreams: false, request: methodShape (Proxy :: Proxy request), response: methodShape (Proxy :: Proxy response), requestName: methodName (Proxy :: Proxy request), responseName: methodName (Proxy :: Proxy response), errors: (rejections (Proxy :: Proxy errorList)).shapes }
 
-instance (MethodMessage request plainRequest, MethodMessage response plainResponse) => Method (ServerStream request response errors) (Connect.ServerStream plainRequest plainResponse) where
+instance (MethodMessage request plainRequest, MethodMessage response plainResponse, RowToList errors errorList, Rejections errorList plainErrors) => Method (ServerStream request response errors) (Connect.ServerStream plainRequest plainResponse) where
   connectMethod _ procedure = Connect.serverStream procedure (methodCodec (Proxy :: Proxy request)) (methodCodec (Proxy :: Proxy response))
-  methodSchema _ = { clientStreams: false, serverStreams: true, request: methodShape (Proxy :: Proxy request), response: methodShape (Proxy :: Proxy response), requestName: methodName (Proxy :: Proxy request), responseName: methodName (Proxy :: Proxy response) }
+  methodSchema _ = { clientStreams: false, serverStreams: true, request: methodShape (Proxy :: Proxy request), response: methodShape (Proxy :: Proxy response), requestName: methodName (Proxy :: Proxy request), responseName: methodName (Proxy :: Proxy response), errors: (rejections (Proxy :: Proxy errorList)).shapes }
 
-instance (MethodMessage request plainRequest, MethodMessage response plainResponse) => Method (ClientStream request response errors) (Connect.ClientStream plainRequest plainResponse) where
+instance (MethodMessage request plainRequest, MethodMessage response plainResponse, RowToList errors errorList, Rejections errorList plainErrors) => Method (ClientStream request response errors) (Connect.ClientStream plainRequest plainResponse) where
   connectMethod _ procedure = Connect.clientStream procedure (methodCodec (Proxy :: Proxy request)) (methodCodec (Proxy :: Proxy response))
-  methodSchema _ = { clientStreams: true, serverStreams: false, request: methodShape (Proxy :: Proxy request), response: methodShape (Proxy :: Proxy response), requestName: methodName (Proxy :: Proxy request), responseName: methodName (Proxy :: Proxy response) }
+  methodSchema _ = { clientStreams: true, serverStreams: false, request: methodShape (Proxy :: Proxy request), response: methodShape (Proxy :: Proxy response), requestName: methodName (Proxy :: Proxy request), responseName: methodName (Proxy :: Proxy response), errors: (rejections (Proxy :: Proxy errorList)).shapes }
 
-instance (MethodMessage request plainRequest, MethodMessage response plainResponse) => Method (BidiStream request response errors) (Connect.BidiStream plainRequest plainResponse) where
+instance (MethodMessage request plainRequest, MethodMessage response plainResponse, RowToList errors errorList, Rejections errorList plainErrors) => Method (BidiStream request response errors) (Connect.BidiStream plainRequest plainResponse) where
   connectMethod _ procedure = Connect.bidiStream procedure (methodCodec (Proxy :: Proxy request)) (methodCodec (Proxy :: Proxy response))
-  methodSchema _ = { clientStreams: true, serverStreams: true, request: methodShape (Proxy :: Proxy request), response: methodShape (Proxy :: Proxy response), requestName: methodName (Proxy :: Proxy request), responseName: methodName (Proxy :: Proxy response) }
+  methodSchema _ = { clientStreams: true, serverStreams: true, request: methodShape (Proxy :: Proxy request), response: methodShape (Proxy :: Proxy response), requestName: methodName (Proxy :: Proxy request), responseName: methodName (Proxy :: Proxy response), errors: (rejections (Proxy :: Proxy errorList)).shapes }
 
 -- | `/ticker.v1.Ticker/Watch` for the method `watch`.
 procedureOf :: String -> String -> String

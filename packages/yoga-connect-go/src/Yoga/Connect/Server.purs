@@ -33,6 +33,8 @@ module Yoga.Connect.Server
   , serveMethods
   , class ServeMethod
   , serveMethod
+  , class ServeRejecting
+  , serveRejecting
   , module Yoga.Go.HTTP.Om.Server
   ) where
 
@@ -55,7 +57,11 @@ import Record as Record
 import Type.Equality (class TypeEquals, to)
 import Type.Proxy (Proxy(..))
 import Yoga.Connect.Service (BidiStream(..), ClientStream(..), Service, ServerStream(..), Unary(..), methodsOf)
-import Yoga.Connect.Status (class Rejection, Code(..), Rejections, codeNumber, rejectWith)
+import Yoga.Connect.Rejection (class Rejections, Rejected, rejections)
+import Yoga.Connect.Status (Code(..), Rejections, codeNumber)
+import Data.Maybe (Maybe(..))
+import Data.String (Pattern(..))
+import Data.String as String
 import Yoga.Go.HTTP.Om.Server (BoundAddress, Host(..), ListenOptions, Port(..))
 import Yoga.Go.HTTP.OmIO (OmIO, liftIO, runOmIO)
 import Yoga.OmIO.Strom (Step(..), Strom)
@@ -138,62 +144,50 @@ instance
     serveMethod context (Record.get (Proxy :: Proxy label) methods) (Record.get (Proxy :: Proxy label) handlers) server
     serveMethods (Proxy :: Proxy tail) context methods handlers server
 
--- | Registers the handler of one method, by its kind.
+-- | Registers the handler of one method, by its kind, its errors going out as their labels say.
 class ServeMethod method handler ctx where
   serveMethod :: ctx -> method -> handler -> Server -> Effect Unit
 
+instance (ServeRejecting method handler ctx err, RowToList err labels, Rejections labels err) => ServeMethod method handler ctx where
+  serveMethod = serveRejecting (rejections (Proxy :: Proxy labels)).encode
+
+-- | Registers the handler of one method, by its kind, its errors going out as `rejecting` says.
+class ServeRejecting :: Type -> Type -> Type -> Row Type -> Constraint
+class ServeRejecting method handler ctx err | handler -> err where
+  serveRejecting :: (Variant err -> Rejected) -> ctx -> method -> handler -> Server -> Effect Unit
+
 -- | `TypeEquals` lets a handler that works in any context, `forall ctx. … OmIO ctx …`, take
 -- | the server's.
-instance
-  ( RowToList err labels
-  , Rejection labels err
-  , TypeEquals ctx handlerContext
-  ) =>
-  ServeMethod (Unary request response) (request -> OmIO handlerContext err response) ctx where
-  serveMethod context (Unary method) handler server = runEffectFn3 unaryImpl method.procedure answer server
+instance TypeEquals ctx handlerContext => ServeRejecting (Unary request response) (request -> OmIO handlerContext err response) ctx err where
+  serveRejecting rejecting context (Unary method) handler server = runEffectFn3 unaryImpl method.procedure answer server
     where
     answer call = case Codec.decode method.request (requestImpl call) of
       Left problem -> failCall call InvalidArgument (show problem)
       Right request -> runOmIO (to context) (handler request) >>= case _ of
-        Left problem -> failWith call problem
+        Left problem -> failWith rejecting method.procedure call problem
         Right response -> respondWith call method.response response
 
-instance
-  ( RowToList err labels
-  , Rejection labels err
-  , TypeEquals ctx handlerContext
-  ) =>
-  ServeMethod (ServerStream request response) (request -> Strom handlerContext err response) ctx where
-  serveMethod context (ServerStream method) handler server = runEffectFn3 serverStreamImpl method.procedure answer server
+instance TypeEquals ctx handlerContext => ServeRejecting (ServerStream request response) (request -> Strom handlerContext err response) ctx err where
+  serveRejecting rejecting context (ServerStream method) handler server = runEffectFn3 serverStreamImpl method.procedure answer server
     where
     answer call = case Codec.decode method.request (requestImpl call) of
       Left problem -> failCall call InvalidArgument (show problem)
       Right request -> runOmIO (to context) (respondWithStream call method.response (handler request)) >>= case _ of
-        Left problem -> failWith call problem
+        Left problem -> failWith rejecting method.procedure call problem
         Right _ -> pure unit
 
-instance
-  ( RowToList err labels
-  , Rejection labels err
-  , TypeEquals ctx handlerContext
-  ) =>
-  ServeMethod (ClientStream request response) (Strom handlerContext err request -> OmIO handlerContext err response) ctx where
-  serveMethod context (ClientStream method) handler server = runEffectFn3 clientStreamImpl method.procedure answer server
+instance TypeEquals ctx handlerContext => ServeRejecting (ClientStream request response) (Strom handlerContext err request -> OmIO handlerContext err response) ctx err where
+  serveRejecting rejecting context (ClientStream method) handler server = runEffectFn3 clientStreamImpl method.procedure answer server
     where
     answer call = runOmIO (to context) (handler (incoming call method.request)) >>= case _ of
-      Left problem -> failWith call problem
+      Left problem -> failWith rejecting method.procedure call problem
       Right response -> respondWith call method.response response
 
-instance
-  ( RowToList err labels
-  , Rejection labels err
-  , TypeEquals ctx handlerContext
-  ) =>
-  ServeMethod (BidiStream request response) (Strom handlerContext err request -> Strom handlerContext err response) ctx where
-  serveMethod context (BidiStream method) handler server = runEffectFn3 bidiStreamImpl method.procedure answer server
+instance TypeEquals ctx handlerContext => ServeRejecting (BidiStream request response) (Strom handlerContext err request -> Strom handlerContext err response) ctx err where
+  serveRejecting rejecting context (BidiStream method) handler server = runEffectFn3 bidiStreamImpl method.procedure answer server
     where
     answer call = runOmIO (to context) (respondWithStream call method.response (handler (incoming call method.request))) >>= case _ of
-      Left problem -> failWith call problem
+      Left problem -> failWith rejecting method.procedure call problem
       Right _ -> pure unit
 
 -- | Encodes the response when the call answers with it.
@@ -235,8 +229,23 @@ incoming call codec = Strom.fromPull \_ -> pure receiveNext
         failCall call InvalidArgument (show problem) # liftIO
         throwError (Variant.inj (Proxy :: Proxy "exception") (error ("a request doesn't decode: " <> show problem)))
 
-failWith :: forall err labels. RowToList err labels => Rejection labels err => Call -> Variant (exception :: Error | err) -> IO Unit
-failWith call = Variant.on (Proxy :: Proxy "exception") (failCall call Internal <<< message) (rejectWith (failCall call))
+-- | Fails the call as the handler's error says, with its detail named in the service's package.
+failWith :: forall err. (Variant err -> Rejected) -> String -> Call -> Variant (exception :: Error | err) -> IO Unit
+failWith rejecting procedure call = Variant.on (Proxy :: Proxy "exception") (failCall call Internal <<< message) (rejecting >>> failRejected)
+  where
+  failRejected { code, message: explanation, detail } = case detail of
+    Nothing -> failCall call code explanation
+    Just { name, bytes } -> IO (runEffectFn5 failWithDetailImpl call (codeNumber code) explanation (packageOf procedure <> name) bytes)
+
+-- | `ticker.v1.` of `/ticker.v1.Ticker/Watch`.
+packageOf :: String -> String
+packageOf procedure = case String.indexOf (Pattern "/") (String.drop 1 procedure) of
+  Just slash -> do
+    let service = String.take slash (String.drop 1 procedure)
+    case String.lastIndexOf (Pattern ".") service of
+      Just dot -> String.take (dot + 1) service
+      Nothing -> ""
+  Nothing -> ""
 
 failCall :: Call -> Code -> String -> IO Unit
 failCall call code explanation = IO (runEffectFn3 failImpl call (codeNumber code) explanation)
@@ -268,3 +277,6 @@ foreign import receivedImpl :: EffectFn1 Call Bytes
 
 -- | The first failure wins; a call that failed answers with it, whatever the handler returns.
 foreign import failImpl :: EffectFn3 Call Int String Unit
+
+-- | `failImpl` with an error detail: a message of the type, and its encoding.
+foreign import failWithDetailImpl :: EffectFn5 Call Int String String Bytes Unit

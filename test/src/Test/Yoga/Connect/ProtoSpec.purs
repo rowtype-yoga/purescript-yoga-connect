@@ -8,13 +8,14 @@ import Test.Spec.Assertions (shouldEqual)
 import Test.Yoga.Connect.ProtobufSpec (Drawing)
 import Yoga.Connect.Message (type (:=), Message, Named, OneOf)
 import Yoga.Connect.Proto (printProto)
+import Yoga.Connect.Rejection (WithCode)
 import Yoga.Connect.Schema (BidiStream, ClientStream, ServerStream, Service, Unary)
 
 type Studio = Service "studio.v1.Studio"
   { save :: Unary Drawing (Named "Saved" (Message { id :: 1 := String })) (invalidArgument :: String)
   , list :: Unary {} (Array String) ()
   , follow :: ServerStream (Message { drawingId :: 1 := String }) Change ()
-  , upload :: ClientStream Bytes' (Message { size :: 1 := Int }) ()
+  , upload :: ClientStream Bytes' (Message { size :: 1 := Int }) (tooBig :: Int, gone :: WithCode "notFound" (Message { since :: 1 := String }))
   , sketch :: BidiStream Change Change (failedPrecondition :: String, notFound :: String)
   }
 
@@ -101,6 +102,14 @@ message UploadRequest {
 
 message UploadResponse {
   int32 size = 1;
+}
+
+message Gone {
+  string since = 1;
+}
+
+message TooBig {
+  int32 value = 1;
 }
 
 message Circle {

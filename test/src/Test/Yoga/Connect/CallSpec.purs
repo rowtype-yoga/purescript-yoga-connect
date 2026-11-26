@@ -40,7 +40,7 @@ spec = describe "a server and a client derived from the same service row" do
       , greetings: [ { index: 1, text: "Ada" }, { index: 2, text: "Ada" } ]
       , everyone: "Ada, Grace, "
       , echoes: [ "one", "two" ]
-      , rejected: Just (ConnectError { code: NotFound, message: "no one by that name" })
+      , rejected: Just (ConnectError { code: NotFound, message: "no one by that name", details: [] })
       }
 
   it "cancels a server stream once the client has taken enough, which interrupts the server's stream" do
