@@ -1,6 +1,7 @@
 -- | The canvas everyone shares. Each participant's call is two streams: their gestures coming in,
 -- | the scenes going out. Cursor moves pile up and go out together every 25 milliseconds, the
--- | latest position of each cursor winning, so a fast mouse doesn't flood anyone.
+-- | latest position of each cursor winning, so a fast mouse doesn't flood anyone. What people type
+-- | goes out the same way, the latest line of each person winning.
 module Cursors.Server
   ( main
   , serveCanvas
@@ -10,15 +11,18 @@ module Cursors.Server
 
 import Prelude
 
-import Cursors.Plain (Cell, Gesture, Point, Scene, Someone)
-import Cursors.Service (Canvas, Color(..), Joining)
+import Cursors.Plain (Bubble, Cell, Gesture, Point, Scene, Someone)
+import Cursors.Service (Canvas, Color(..), Joining, Voice(..))
 import Data.Array as Array
-import Data.Foldable (for_)
+import Data.Foldable (foldl, for_)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Int as Int
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Newtype (un)
+import Data.Set (Set)
+import Data.Set as Set
+import Data.String as String
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Variant (Variant)
@@ -87,9 +91,18 @@ follow room visit = Variant.match
       unless welcomed (reject @"nameTaken" (name <> " is here already, pick another name"))
   , moved: \at -> asSomeone \name -> atomicModifyIORef' room (\canvas -> moveTo name at canvas /\ unit) # liftIO
   , drew: \cell -> asSomeone \_ -> atomicModifyIORef' room (\canvas -> canvas { cells = Map.insert (cell.x /\ cell.y) cell.color canvas.cells, drawn = Array.snoc canvas.drawn cell } /\ unit) # liftIO
+  , typing: \{ text } -> asSomeone \name -> atomicModifyIORef' room (\canvas -> speak name (wordsOf Typing text) canvas /\ unit) # liftIO
+  , said: \{ text } -> asSomeone \name -> atomicModifyIORef' room (\canvas -> speak name (wordsOf Said text) canvas /\ unit) # liftIO
   }
   where
   asSomeone action = readIORef visit.name # liftIO >>= maybe (reject @"invalidArgument" "say hello first") action
+  wordsOf voice text
+    | text == "" = Nothing
+    | otherwise = Just { text: String.take longestLine text, voice, ticksLeft: ticksShown }
+  speak name words canvas = canvas
+    { speech = maybe (Map.delete name) (Map.insert name) words canvas.speech
+    , voiced = Set.insert name canvas.voiced
+    }
   moveTo name at canvas = canvas
     { people = Map.update (\person -> Just person { at = Just at }) name canvas.people
     , moves = Map.insert name at canvas.moves
@@ -109,29 +122,72 @@ welcome room visit name = do
     Just (before /\ person) -> do
       writeIORef visit.name (Just name)
       let you = someone name person
-      _ <- trySend visit.outbox (Variant.inj (Proxy :: Proxy "welcome") { you, others: Map.toUnfoldable before.people <#> \(other /\ them) -> someone other them, cells: cellsOf before })
+      _ <- trySend visit.outbox (Variant.inj (Proxy :: Proxy "welcome") { you, others: Map.toUnfoldable before.people <#> \(other /\ them) -> someone other them, cells: cellsOf before, bubbles: bubblesOf before })
       tellEveryoneBut name before (Variant.inj (Proxy :: Proxy "joined") you)
       pure true
   where
   cellsOf canvas = Map.toUnfoldable canvas.cells <#> \((x /\ y) /\ color) -> { x, y, color }
+  bubblesOf canvas = Map.toUnfoldable canvas.speech <#> \(speaker /\ words) -> bubble speaker words
 
--- | Takes the participant's cursor off the canvas, however they left.
+-- | Takes the participant's cursor and what they were saying off the canvas, however they left.
 leave :: forall ctx err. Room -> Visit -> Exit err -> OmIO ctx err Unit
 leave room visit _ = do
   named <- readIORef visit.name # liftIO
   for_ named \name -> do
-    canvas <- atomicModifyIORef' room (\canvas -> canvas { people = Map.delete name canvas.people, moves = Map.delete name canvas.moves } /\ canvas) # liftIO
+    canvas <- atomicModifyIORef' room (\canvas -> gone name canvas /\ canvas) # liftIO
     tellEveryoneBut name canvas (Variant.inj (Proxy :: Proxy "left") { name }) # liftIO
     log (name <> " left") # liftIO
+  where
+  gone name canvas = canvas
+    { people = Map.delete name canvas.people
+    , moves = Map.delete name canvas.moves
+    , speech = Map.delete name canvas.speech
+    , voiced = Set.delete name canvas.voiced
+    }
 
--- | Everyone gets the cursors that moved and the cells drawn since last time, in one scene each.
+-- | Everyone gets the cursors that moved, the cells drawn and the bubbles that changed since last
+-- | time, in one scene each.
 sendWhatPiledUp :: Room -> IO Unit
 sendWhatPiledUp room = do
-  canvas <- atomicModifyIORef' room \canvas -> canvas { moves = Map.empty, drawn = [] } /\ canvas
+  canvas <- atomicModifyIORef' room \before -> do
+    let canvas = fadeSpeech before
+    canvas { moves = Map.empty, drawn = [], voiced = Set.empty } /\ canvas
   unless (Map.isEmpty canvas.moves) do
     tellEveryone canvas (Variant.inj (Proxy :: Proxy "cursors") { moved: Map.toUnfoldable canvas.moves <#> \(name /\ at) -> { name, at } })
   unless (Array.null canvas.drawn) do
     tellEveryone canvas (Variant.inj (Proxy :: Proxy "drawn") { cells: canvas.drawn })
+  unless (Set.isEmpty canvas.voiced) do
+    tellEveryone canvas (Variant.inj (Proxy :: Proxy "speech") (speechOf canvas))
+  where
+  speechOf canvas =
+    { bubbles: voicedNames canvas # Array.mapMaybe \name -> Map.lookup name canvas.speech <#> bubble name
+    , hushed: voicedNames canvas # Array.filter \name -> not (Map.member name canvas.speech)
+    }
+  voicedNames canvas = Set.toUnfoldable canvas.voiced :: Array String
+
+-- | A line that was said stays for a while, fades for the last second of it, and goes.
+fadeSpeech :: CanvasState -> CanvasState
+fadeSpeech canvas = foldl older canvas (Map.toUnfoldable canvas.speech :: Array (String /\ Words))
+  where
+  older state (name /\ words)
+    | words.voice == Typing = state
+    | words.ticksLeft <= 1 = state { speech = Map.delete name state.speech, voiced = Set.insert name state.voiced }
+    | words.ticksLeft - 1 == ticksFading = state { speech = Map.insert name words { voice = Fading, ticksLeft = ticksFading } state.speech, voiced = Set.insert name state.voiced }
+    | otherwise = state { speech = Map.insert name words { ticksLeft = words.ticksLeft - 1 } state.speech }
+
+-- | A line said is shown four seconds, 25 milliseconds a tick, the last of them fading.
+ticksShown :: Int
+ticksShown = 160
+
+ticksFading :: Int
+ticksFading = 40
+
+-- | More than anyone's terminal shows of it.
+longestLine :: Int
+longestLine = 200
+
+bubble :: String -> Words -> Bubble
+bubble name { text, voice } = { name, text, voice }
 
 -- | A participant who can't keep up misses scenes rather than holding everyone else up.
 tellEveryone :: CanvasState -> Scene -> IO Unit
@@ -158,14 +214,19 @@ type CanvasState =
   , cells :: Map (Int /\ Int) Color
   , moves :: Map String Point
   , drawn :: Array Cell
+  , speech :: Map String Words
+  , voiced :: Set String
   }
 
 type Person = { color :: Color, at :: Maybe Point, outbox :: Chan Scene }
+
+-- | What someone is saying, and once it's said, how many ticks it has left.
+type Words = { text :: String, voice :: Voice, ticksLeft :: Int }
 
 -- | One call: where its scenes go, and the name it said hello with.
 type Visit = { outbox :: Chan Scene, name :: IORef (Maybe String) }
 
 newRoom :: IO Room
-newRoom = newIORef { people: Map.empty, cells: Map.empty, moves: Map.empty, drawn: [] }
+newRoom = newIORef { people: Map.empty, cells: Map.empty, moves: Map.empty, drawn: [], speech: Map.empty, voiced: Set.empty }
 
 type Failures = (nameTaken :: String, invalidArgument :: String)
