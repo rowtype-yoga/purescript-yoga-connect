@@ -93,6 +93,10 @@ spec = describe "a server and a client of a service type" do
         # Strom.runFold [] Array.snoc
     echoed `shouldEqual` Left "invalidArgument: say something"
 
+  it "answers a bidi call before the client has sent anything" do
+    welcomed <- welcomedBeforeSaying
+    welcomed `shouldEqual` Right (Just "welcome")
+
   it "stops the handler's stream once the client walks away from a bidi call" do
     chattyEnds >>= shouldEqual [ "interrupted" ]
 
@@ -289,3 +293,25 @@ chattyEnds = toAff do
     Ended -> "ended"
     Failed _ -> "failed"
     Interrupted -> "interrupted"
+
+-- A bidi call whose client has nothing to say yet, and whose server speaks first.
+
+type Doorman = Service "test.v1.Doorman"
+  { enter :: BidiStream String String ()
+  }
+
+welcomedBeforeSaying :: Aff (Either String (Maybe String))
+welcomedBeforeSaying = do
+  connection <- startDoorman
+  nothingToSay <- newChan # toAff
+  calling ((client @Doorman connection).enter (Strom.fromChan nothingToSay) # Strom.runHead)
+  where
+  startDoorman = toAff do
+    server <- createServer # liftEffect
+    registerServiceWith @Doorman {} { enter } server # liftEffect
+    bound <- listen { host: Host "127.0.0.1", port: Port 0 } server
+    connect ("http://127.0.0.1:" <> show (portNumber bound.port)) # liftEffect
+  enter :: Handler (BidiStream String String ()) ()
+  enter = handle do
+    { requests } <- ask
+    pure (Strom.succeed "welcome" <> (requests # Strom.filterMap (const Nothing)))
