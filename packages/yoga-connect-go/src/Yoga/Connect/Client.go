@@ -66,8 +66,13 @@ func OpenClientStreamImpl(ctx context.Context, c *connection, procedure string) 
 	return &clientCall{clientStream: c.client(procedure).CallClientStream(ctx)}
 }
 
+// OpenBidiStreamImpl calls within the context too. net/http only notices a cancelled context
+// between the request's writes, and a bidi call's requests may never be done, so once the
+// context is done the responses are closed, which ends the call.
 func OpenBidiStreamImpl(ctx context.Context, c *connection, procedure string) *clientCall {
-	return &clientCall{bidiStream: c.client(procedure).CallBidiStream(ctx)}
+	stream := c.client(procedure).CallBidiStream(ctx)
+	context.AfterFunc(ctx, func() { _ = stream.CloseResponse() })
+	return &clientCall{bidiStream: stream}
 }
 
 func SendImpl(call *clientCall, request []byte) bool {

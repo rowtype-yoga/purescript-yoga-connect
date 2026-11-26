@@ -101,10 +101,45 @@
         "path": "packages/yoga-connect",
         "core": {
           "dependencies": [
-            "maybe",
-            "prelude",
-            "variant",
-            "yoga-protobuf"
+            {
+              "arrays": ">=7.3.1 <8.0.0"
+            },
+            {
+              "effect": ">=4.0.1 <5.0.0"
+            },
+            {
+              "either": ">=6.1.1 <7.0.0"
+            },
+            {
+              "functions": ">=6.0.1 <7.0.0"
+            },
+            {
+              "int64": ">=3.0.2 <4.0.0"
+            },
+            {
+              "maybe": ">=6.0.1 <7.0.0"
+            },
+            {
+              "partial": ">=4.0.1 <5.0.0"
+            },
+            {
+              "prelude": ">=6.0.3 <7.0.0"
+            },
+            {
+              "record": ">=4.0.1 <5.0.0"
+            },
+            {
+              "strings": ">=6.1.0 <7.0.0"
+            },
+            {
+              "tuples": ">=7.0.1 <8.0.0"
+            },
+            {
+              "variant": ">=8.0.0 <9.0.0"
+            },
+            {
+              "yoga-protobuf": "*"
+            }
           ]
         },
         "test": {
@@ -149,7 +184,7 @@
               "tuples": ">=7.0.1 <8.0.0"
             },
             {
-              "type-equality": ">=4.0.1 <5.0.0"
+              "type-equality": ">=4.0.2 <5.0.0"
             },
             {
               "variant": ">=8.0.0 <9.0.0"
@@ -198,10 +233,16 @@
               "exceptions": ">=6.1.1 <7.0.0"
             },
             {
+              "functions": ">=6.0.1 <7.0.0"
+            },
+            {
               "go-io": "*"
             },
             {
               "greeter-proto": "*"
+            },
+            {
+              "int64": ">=3.0.2 <4.0.0"
             },
             {
               "maybe": ">=6.0.1 <7.0.0"
@@ -210,10 +251,16 @@
               "now": ">=6.0.1 <7.0.0"
             },
             {
+              "ordered-collections": ">=3.3.0 <4.0.0"
+            },
+            {
               "prelude": ">=6.0.3 <7.0.0"
             },
             {
               "spec": ">=8.1.2 <9.0.0"
+            },
+            {
+              "strings": ">=6.1.0 <7.0.0"
             },
             {
               "transformers": ">=6.1.1 <7.0.0"
@@ -405,16 +452,16 @@
     "extra_packages": {
       "go-io": {
         "git": "https://github.com/i-am-the-slime/purescript-go.git",
-        "ref": "v0.2.0",
+        "ref": "v0.3.0",
         "subdir": "packages/go-io"
       },
       "yoga-go-http-om": {
         "git": "https://github.com/rowtype-yoga/purescript-yoga-go-http-om.git",
-        "ref": "v0.1.1"
+        "ref": "v0.2.0"
       },
       "yoga-protobuf": {
         "git": "https://github.com/rowtype-yoga/purescript-yoga-protobuf.git",
-        "ref": "v0.1.0"
+        "ref": "v0.2.0"
       }
     }
   },
@@ -802,7 +849,7 @@
     "go-io": {
       "type": "git",
       "url": "https://github.com/i-am-the-slime/purescript-go.git",
-      "rev": "9d97993edc0e42166b1135e7a48e6fdb0890c47a",
+      "rev": "30228bf274081dcb730b5238c1c00f3fc2363c4c",
       "subdir": "packages/go-io",
       "dependencies": [
         "aff",
@@ -1426,7 +1473,7 @@
     "yoga-go-http-om": {
       "type": "git",
       "url": "https://github.com/rowtype-yoga/purescript-yoga-go-http-om.git",
-      "rev": "013eb3c10d3465bd46d8157e12d82bcef8d9efaf",
+      "rev": "33ca06e8b9dc118d750cbc5cc183c88b6b985f12",
       "dependencies": [
         "aff",
         "arrays",
@@ -1528,8 +1575,8 @@
     },
     "yoga-om": {
       "type": "registry",
-      "version": "1.5.2",
-      "integrity": "sha256-2ys14BF6NPgzFDFUIFk0EDxmqkA8+yghIA9TXHlOmE0=",
+      "version": "2.2.1",
+      "integrity": "sha256-nahYX6UD7/7chFM5hxGGVITSbiLXKb0gbP3PV8CvsXY=",
       "dependencies": [
         "aff",
         "aff-retry",
@@ -1560,12 +1607,13 @@
     },
     "yoga-om-layer": {
       "type": "registry",
-      "version": "1.2.2",
-      "integrity": "sha256-Usw2ZysteSYNkEG3CDmVVXUk7cgr1mntkmhbR33nF6M=",
+      "version": "2.1.0",
+      "integrity": "sha256-4XxwLT/1JJQovIkH/qog5YRa4WcP8SbfKFrWs214/sQ=",
       "dependencies": [
         "aff",
         "aff-retry",
         "arrays",
+        "control",
         "effect",
         "exceptions",
         "foldable-traversable",
@@ -1577,6 +1625,7 @@
         "record",
         "record-studio",
         "refs",
+        "tailrec",
         "transformers",
         "type-equality",
         "typelevel-prelude",
@@ -1599,7 +1648,7 @@
     "yoga-protobuf": {
       "type": "git",
       "url": "https://github.com/rowtype-yoga/purescript-yoga-protobuf.git",
-      "rev": "48089a9feeb8cdfcdc6a86e61a16da61b5fd2f51",
+      "rev": "30c1fa1b8673b15445f93cddaf2217af43a7b20d",
       "dependencies": [
         "arrays",
         "effect",

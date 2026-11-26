@@ -9,6 +9,9 @@ import Test.Spec.Runner (defaultConfig, runSpec')
 import Test.Yoga.Connect.CallSpec as CallSpec
 import Test.Yoga.Connect.ServiceSpec as ServiceSpec
 import Test.Yoga.Connect.StatusSpec as StatusSpec
+import Test.Yoga.Connect.ProtobufSpec as ProtobufSpec
+import Test.Yoga.Connect.ProtoSpec as ProtoSpec
+import Test.Yoga.Connect.TypedCallSpec as TypedCallSpec
 
 main :: Effect Unit
 main = launchAff_ do
@@ -16,3 +19,6 @@ main = launchAff_ do
     StatusSpec.spec
     ServiceSpec.spec
     CallSpec.spec
+    ProtobufSpec.spec
+    ProtoSpec.spec
+    TypedCallSpec.spec

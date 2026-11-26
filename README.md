@@ -1,8 +1,9 @@
 # purescript-yoga-connect
 
-gRPC for PureScript, from your `.proto` files. Servers and clients are derived from one service
-row, and on Go (through [googoo](https://github.com/i-am-the-slime/iris-go-backend)) each method
-compiles down to straight-line Go: decode, your handler, encode.
+gRPC for PureScript, from a PureScript type ([Services as types](#services-as-types)) or from your
+`.proto` files. Servers and clients are derived from one service row, and on Go (through
+[googoo](https://github.com/i-am-the-slime/iris-go-backend)) each method compiles down to
+straight-line Go: decode, your handler, encode.
 
 ```proto
 service Greeter {
@@ -29,6 +30,82 @@ greeter :: Connect.Service Greeter
 
 `greeter` carries each method's route and message codecs. The messages are plain records, so
 the codecs travel as a value rather than as instances.
+
+## Services as types
+
+You don't need a `.proto` at all. Write the service as a PureScript type and the server, the client
+and the `.proto` all come from it:
+
+```purescript
+import Yoga.Connect.Om
+
+type Ticker = Service "ticker.v1.Ticker"
+  { watch :: ServerStream Subscribe Quote (notFound :: String)
+  , trade :: BidiStream Trade Fill (notFound :: String, failedPrecondition :: String)
+  }
+
+type Subscribe = Message { symbols :: 1 := Array String }
+type Quote = Message { symbol :: 1 := String, price :: 2 := Number, average :: 3 := Number }
+```
+
+The numbers are the protocol buffer field numbers, so they stay put when you rename a field. The
+last row of a method is how it can fail, gRPC status codes by name. Handlers `ask` for the request
+and whatever else they need, like routes in yoga-go-http-om:
+
+```purescript
+main = do
+  server <- createServer
+  registerServiceWith @Ticker { market } { watch, trade } server
+  launchIO_ (listen { host: Host "127.0.0.1", port: Port 50051 } server)
+
+watch :: Handler (ServerStream Subscribe Quote (notFound :: String)) (market :: Market)
+watch = handle do
+  { request: { symbols }, market } <- ask
+  listings <- traverse (listingIn market) symbols # maybe (reject @"notFound" "we don't list that") pure
+  pure (Strom.mergeAll (listings <#> quotesOf))
+```
+
+Handlers and clients only ever see plain records: a `Quote` is
+`{ symbol :: String, price :: Number, average :: Number }` to them.
+
+| Method | `handle`s |
+| --- | --- |
+| `Unary req res err` | `OmIO { request :: req \| ctx } err res` |
+| `ServerStream req res err` | `OmIO { request :: req \| ctx } err (Strom (Record ctx) err res)` |
+| `ClientStream req res err` | `OmIO { requests :: Strom (Record ctx) err req \| ctx } err res` |
+| `BidiStream req res err` | `OmIO { requests :: Strom (Record ctx) err req \| ctx } err (Strom (Record ctx) err res)` |
+
+A client is a record of calls, and fails with the method's own errors, so a `NOT_FOUND` from the
+server is your `notFound` with its message:
+
+```purescript
+let ticker = client @Ticker connection
+ticker.watch { symbols: [ "ACME" ] } # Strom.take 3 # Strom.forEach (log <<< _.symbol)
+```
+
+and `printProto @Ticker` gives you the `.proto`, for grpcurl or for clients in other languages. The
+encoding is worked out from the types, with nothing generated, and it's the same bytes protoc's
+code writes, so clients generated from a `.proto` talk to these servers and the other way round.
+
+What a field can be:
+
+| PureScript | protocol buffers |
+| --- | --- |
+| `String`, `Boolean`, `Number`, `Bytes` | `string`, `bool`, `double`, `bytes` |
+| `Int` | `int32` |
+| `Int64`, `UInt32`, `UInt64` | `int64`, `uint32`, `uint64` |
+| a sum type of constructors without arguments, with `Generic` | an `enum`, the first constructor is 0 |
+| `Message { … }` | a nested message |
+| `Array a` | `repeated a`, packed if it's a number |
+| `Maybe a` | `optional a` |
+| `OneOf (circle :: 4 := Circle, square :: 5 := Square)`, no number of its own | a `oneof`, a `Variant` to handlers |
+
+A method's messages are called `WatchRequest` and `WatchResponse` in the `.proto`, and nested ones
+after their field. `Named "Quote" (Message { … })` names one yourself. A method can take or answer
+something that isn't a message, `Unary {} (Array Room) ()`, and it goes as the field `value = 1`.
+
+[examples/ticker](examples/ticker) and [examples/live-cursors](examples/live-cursors) are built
+this way.
 
 ## Installing
 
@@ -157,7 +234,8 @@ plain Go.
 
 ## Packages
 
-- `yoga-connect`: the service types and status codes, for both sides and any backend
+- `yoga-connect`: the service types, messages as types and their protocol buffer codecs, the
+  `.proto` printer and the status codes, for both sides and any backend
 - `yoga-connect-go`: the server and the client on Go
 - `yoga-strom-io`: the streams, which don't need gRPC
 
@@ -169,6 +247,10 @@ A browser client would be another package next to `yoga-connect-go`, derived fro
 symbol and fills trades over a bidi stream, turning bad ones down with `FAILED_PRECONDITION`; the
 client watches with a deadline and trades. Its README holds it up against the same server in
 grpc-go.
+
+[examples/live-cursors](examples/live-cursors): a canvas in the terminal that everyone shares, with
+Bubble Tea. Everyone sees everyone else's mouse and drawing, one bidi call each, cursor moves
+sent out together every 25 milliseconds.
 
 ## Demo
 

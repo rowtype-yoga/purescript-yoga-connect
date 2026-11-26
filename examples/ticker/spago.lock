@@ -17,29 +17,10 @@
             "ordered-collections",
             "prelude",
             "strings",
-            "ticker-proto",
             "tuples",
             "variant",
-            "yoga-connect",
             "yoga-connect-go",
-            "yoga-go-http-om",
             "yoga-strom-io"
-          ]
-        },
-        "test": {
-          "dependencies": []
-        }
-      },
-      "ticker-proto": {
-        "path": "proto",
-        "core": {
-          "dependencies": [
-            "effect",
-            "either",
-            "functions",
-            "prelude",
-            "yoga-connect",
-            "yoga-protobuf"
           ]
         },
         "test": {
@@ -49,7 +30,7 @@
     },
     "package_set": {
       "address": {
-        "url": "https://raw.githubusercontent.com/rowtype-yoga/purescript-go-package-sets/go-0.1.18-20261126.3/packages.json"
+        "url": "https://raw.githubusercontent.com/rowtype-yoga/purescript-go-package-sets/go-0.1.18-20261126.4/packages.json"
       },
       "compiler": ">=0.15.15 <0.16.0",
       "content": {
@@ -367,7 +348,35 @@
         "yoga-http-api": "0.3.4",
         "yoga-json": "5.2.1",
         "yoga-om": "2.2.1",
-        "yoga-om-layer": "2.1.0",
+        "yoga-om-layer": {
+          "git": "https://github.com/rowtype-yoga/purescript-yoga-om-layer.git",
+          "ref": "v2.2.0",
+          "dependencies": [
+            "aff",
+            "aff-retry",
+            "arrays",
+            "control",
+            "effect",
+            "exceptions",
+            "foldable-traversable",
+            "foreign",
+            "maybe",
+            "nullable",
+            "ordered-collections",
+            "parallel",
+            "prelude",
+            "record",
+            "record-studio",
+            "refs",
+            "tailrec",
+            "transformers",
+            "type-equality",
+            "typelevel-prelude",
+            "unsafe-coerce",
+            "variant",
+            "yoga-om"
+          ]
+        },
         "yoga-options": "0.1.1",
         "yoga-protobuf": {
           "git": "https://github.com/rowtype-yoga/purescript-yoga-protobuf.git",
@@ -413,7 +422,17 @@
         "yoga-tree": "1.0.0"
       }
     },
-    "extra_packages": {}
+    "extra_packages": {
+      "yoga-connect": {
+        "path": "../../packages/yoga-connect"
+      },
+      "yoga-connect-go": {
+        "path": "../../packages/yoga-connect-go"
+      },
+      "yoga-strom-io": {
+        "path": "../../packages/yoga-strom-io"
+      }
+    }
   },
   "packages": {
     "aff": {
@@ -1317,22 +1336,27 @@
       ]
     },
     "yoga-connect": {
-      "type": "git",
-      "url": "https://github.com/rowtype-yoga/purescript-yoga-connect.git",
-      "rev": "2d117582289a8ed7c367ef1c6fc8238e59d9d2c4",
-      "subdir": "packages/yoga-connect",
+      "type": "local",
+      "path": "../../packages/yoga-connect",
       "dependencies": [
+        "arrays",
+        "effect",
+        "either",
+        "functions",
+        "int64",
         "maybe",
+        "partial",
         "prelude",
+        "record",
+        "strings",
+        "tuples",
         "variant",
         "yoga-protobuf"
       ]
     },
     "yoga-connect-go": {
-      "type": "git",
-      "url": "https://github.com/rowtype-yoga/purescript-yoga-connect.git",
-      "rev": "2d117582289a8ed7c367ef1c6fc8238e59d9d2c4",
-      "subdir": "packages/yoga-connect-go",
+      "type": "local",
+      "path": "../../packages/yoga-connect-go",
       "dependencies": [
         "arrays",
         "datetime",
@@ -1489,9 +1513,9 @@
       ]
     },
     "yoga-om-layer": {
-      "type": "registry",
-      "version": "2.1.0",
-      "integrity": "sha256-4XxwLT/1JJQovIkH/qog5YRa4WcP8SbfKFrWs214/sQ=",
+      "type": "git",
+      "url": "https://github.com/rowtype-yoga/purescript-yoga-om-layer.git",
+      "rev": "eec69687c96412679d7dea9a96ef5cea537b69a0",
       "dependencies": [
         "aff",
         "aff-retry",
@@ -1500,6 +1524,7 @@
         "effect",
         "exceptions",
         "foldable-traversable",
+        "foreign",
         "maybe",
         "nullable",
         "ordered-collections",
@@ -1548,10 +1573,8 @@
       ]
     },
     "yoga-strom-io": {
-      "type": "git",
-      "url": "https://github.com/rowtype-yoga/purescript-yoga-connect.git",
-      "rev": "2d117582289a8ed7c367ef1c6fc8238e59d9d2c4",
-      "subdir": "packages/yoga-strom-io",
+      "type": "local",
+      "path": "../../packages/yoga-strom-io",
       "dependencies": [
         "arrays",
         "datetime",

@@ -1,0 +1,34 @@
+package:
+  name: live-cursors
+  description: A shared terminal canvas over gRPC, compiled to Go with googoo. Everyone's mouse and
+    everyone's drawing, streamed both ways, with Bubble Tea.
+  dependencies:
+    - arrays
+    - bubbletea
+    - datetime
+    - effect
+    - either
+    - foldable-traversable
+    - go-io
+    - go-os
+    - integers
+    - lipgloss
+    - maybe
+    - newtype
+    - ordered-collections
+    - prelude
+    - strings
+    - tuples
+    - variant
+    - yoga-connect-go
+    - yoga-strom-io
+workspace:
+  packageSet:
+    url: https://raw.githubusercontent.com/rowtype-yoga/purescript-go-package-sets/go-0.1.18-20261126.4/packages.json
+  extraPackages:
+    yoga-connect:
+      path: ../../packages/yoga-connect
+    yoga-connect-go:
+      path: ../../packages/yoga-connect-go
+    yoga-strom-io:
+      path: ../../packages/yoga-strom-io

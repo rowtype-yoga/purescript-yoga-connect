@@ -1,0 +1,18 @@
+package:
+  name: live-cursors-test
+  description: The canvas's specs, two or three clients without a terminal against a server of their own
+  dependencies:
+    - aff
+    - arrays
+    - bubbletea
+    - datetime
+    - effect
+    - go-io
+    - live-cursors
+    - maybe
+    - prelude
+    - spec
+    - strings
+    - yoga-connect-go
+  run:
+    main: Test.Main

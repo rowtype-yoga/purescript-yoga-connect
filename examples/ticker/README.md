@@ -3,11 +3,15 @@
 A live stock ticker over gRPC, in PureScript, compiled to one Go binary with
 [googoo](https://github.com/i-am-the-slime/iris-go-backend).
 
-```proto
-service Ticker {
-  rpc Watch(Subscribe) returns (stream Quote);
-  rpc Trade(stream ticker.v1.Trade) returns (stream Fill);
-}
+The service is a PureScript type. The server, the client and the `.proto` all come from it:
+
+```purescript
+type Ticker = Service "ticker.v1.Ticker"
+  { watch :: ServerStream Subscribe Quote (notFound :: String)
+  , trade :: BidiStream Trade Fill (notFound :: String, failedPrecondition :: String)
+  }
+
+type Quote = Message { symbol :: 1 := String, price :: 2 := Number, average :: 3 := Number }
 ```
 
 - `watch` merges a random walk per symbol into one stream of quotes, each with its moving average
@@ -16,7 +20,8 @@ service Ticker {
 - a client that hangs up, or whose deadline passes, stops the server's streams, and their
   finalizers say so
 
-The whole server is [src/Ticker/Server.purs](src/Ticker/Server.purs), the client is
+The service is [src/Ticker/Service.purs](src/Ticker/Service.purs), the whole server is
+[src/Ticker/Server.purs](src/Ticker/Server.purs), the client is
 [src/Ticker/Client.purs](src/Ticker/Client.purs).
 
 ## Running it
@@ -25,13 +30,13 @@ You need googoo 0.1.18-go.5 or newer (`brew install spago i-am-the-slime/tap/goo
 
 ```
 cd examples/ticker
-googoo run --go -p ticker --main Ticker.Server
+googoo run -p ticker --main Ticker.Server
 ```
 
 and in another terminal
 
 ```
-googoo run --go -p ticker --main Ticker.Client
+googoo run -p ticker --main Ticker.Client
 ```
 
 ```
@@ -68,21 +73,27 @@ all three price streams on the server.
 
 ## The interesting bits
 
-The service row comes from the `.proto`, so the compiler checks that the server has a handler for
-every method, of the right kind:
+The numbers in a message are the protocol buffer field numbers, so a field keeps its number when
+you rename it. Handlers and clients never see them: a `Quote` is
+`{ symbol :: String, price :: Number, average :: Number }` to them, and the encoding is worked out
+from the type, no protoc and no generated code.
+
+The compiler checks that the server has a handler for every method, of the right kind, and that
+the context has what each handler asks for:
 
 ```purescript
-serve ticker { watch, trade } server
+registerServiceWith @Ticker { market } { watch, trade } server
 ```
 
-Watching is a merge of one stream per symbol:
+A handler `ask`s for the request and its context. Watching is a merge of one stream per symbol:
 
 ```purescript
-watch :: forall ctx. Subscribe -> Strom ctx (notFound :: String) Quote
-watch { symbols } = case traverse listingOf wanted of
-  Nothing -> Strom.fromOm (reject @"notFound" ("we list " <> joinWith ", " (market <#> _.symbol)))
-  Just listings -> Strom.mergeAll (listings <#> quotesOf)
-    # Strom.onExit (sayHowItEnded ("watching " <> joinWith ", " wanted))
+watch :: Handler Watching (market :: Market)
+watch = handle do
+  { request: { symbols }, market } <- ask
+  let wanted = if Array.null symbols then market <#> _.symbol else symbols
+  listings <- traverse (listingIn market) wanted # maybe (reject @"notFound" ("we list " <> symbolsIn market)) pure
+  pure (Strom.mergeAll (listings <#> quotesOf) # Strom.onExit (sayHowItEnded ("watching " <> joinWith ", " wanted)))
 ```
 
 and each of those is a tick, a random walk and a moving average:
@@ -95,23 +106,27 @@ quotesOf { symbol, opening, volatility, pace, seed } = Strom.every pace
   # map \(price /\ average) -> { symbol, price: toCents price, average: toCents average }
 ```
 
-The error row is the list of status codes a handler can answer with. `reject @"notFound"` only
-compiles because `notFound` is in it, and the client gets `NOT_FOUND`:
+The last row of a method is the list of status codes its handler can answer with.
+`reject @"notFound"` only compiles because `notFound` is in it, and the client gets `NOT_FOUND`:
 
 ```purescript
-trade :: forall ctx. Strom ctx TradeRejections Trade -> Strom ctx TradeRejections Fill
-trade trades = Strom.bracketExit openBook closeBook \book -> trades # Strom.mapM (fill book)
+type Trading = BidiStream Trade Fill (notFound :: String, failedPrecondition :: String)
 
-type TradeRejections = (notFound :: String, failedPrecondition :: String)
+trade :: Handler Trading (market :: Market)
+trade = handle do
+  { requests: trades, market } <- ask
+  pure (Strom.bracketExit openBook closeBook \book -> trades # Strom.mapM (fill market book))
 ```
 
 `bracketExit` closes the book however the session ends: the client is done, a trade is refused, or
 the client hangs up.
 
-On the client, a deadline is just a stream that stops:
+The client gets those as errors of its own, `failedPrecondition` with the server's message, next
+to `connectError` for everything else. A deadline is just a stream that stops:
 
 ```purescript
-tickerClient.watch { symbols: [ "ACME", "GLOBEX", "INITECH" ] }
+let ticker = client @Ticker connection
+ticker.watch { symbols: [ "ACME", "GLOBEX", "INITECH" ] }
   # Strom.timeout (Milliseconds 2000.0)
   # Strom.forEach (say <<< describeQuote)
 ```
@@ -119,13 +134,13 @@ tickerClient.watch { symbols: [ "ACME", "GLOBEX", "INITECH" ] }
 ## Compared with grpc-go
 
 I wrote the same server with grpc-go and protoc-gen-go-grpc, so it streams the very same prices.
-Leaving out the generated code on both sides:
+Leaving out the code protoc generates for Go:
 
 | | PureScript | Go |
 | --- | --- | --- |
-| the whole server | 121 lines | 165 lines |
-| `watch` (merging the symbols, moving averages, cancellation) | 18 lines | 62 lines |
-| `trade` (positions, rejections, the closing log line) | 21 lines | 25 lines |
+| the whole server | 129 lines, and 38 for the service | 165 lines |
+| `watch` (merging the symbols, moving averages, cancellation) | 17 lines | 62 lines |
+| `trade` (positions, rejections, the closing log line) | 27 lines | 25 lines |
 
 The difference is in `watch`. In Go, merging streams means a goroutine per symbol, a channel, a
 `WaitGroup`, and a `select` on `ctx.Done()` at every place one could wait:
@@ -204,27 +219,36 @@ func feed(ctx context.Context, l listing, quotes chan<- *pb.Quote) {
 Get the order of `cancel()` and `feeds.Wait()` wrong and a client that hangs up leaves the handler
 stuck forever. In PureScript, `mergeAll` owns those goroutines, and closing the call closes them.
 
-## The Go googoo writes
-
-`googoo go -p ticker --entry Ticker.Server.main out` puts the server's Go in `out/`. Each release made
-it nicer to read:
-
-| | server, go.2 | server, go.3 | server, go.5 | client, go.2 | client, go.3 | client, go.5 |
-| --- | --- | --- | --- | --- | --- | --- |
-| `switch either` | 43 | 32 | 12 | 39 | 19 | 10 |
-| average function name | 47.7 characters | 35.4 characters | 27.2 characters | 45.3 characters | 26.5 characters | 22.6 characters |
-| function names of 30 characters or more | 83 | 49 | 37 | 66 | 17 | 10 |
-
-Handlers that fail return `(value, err)` instead of an `Either` to switch on. The Strom pipelines'
-specialisations still get some silly long names: the server's longest went from 694 characters to
-214, the client's is still 392.
-
 ## Any gRPC client works
+
+The `.proto` comes from the type too:
+
+```
+googoo run -q -p ticker --main Ticker.Service > ticker.proto
+```
+
+```proto
+service Ticker {
+  rpc Trade(stream TradeRequest) returns (stream TradeResponse);
+  rpc Watch(WatchRequest) returns (stream WatchResponse);
+}
+
+message TradeRequest {
+  string symbol = 1;
+  int32 quantity = 2;
+  double limit = 3;
+}
+…
+```
+
+Each method gets a request and a response message of its own. The names don't go over the wire,
+only the field numbers do, so a client generated from the `.proto` this example used to have
+(with `Subscribe` and `Quote`) still works.
 
 With [grpcurl](https://github.com/fullstorydev/grpcurl):
 
 ```
-grpcurl -plaintext -proto proto/ticker.proto -max-time 2 \
+grpcurl -plaintext -import-path . -proto ticker.proto -max-time 2 \
   -d '{"symbols":["ACME","UMBRELLA"]}' 127.0.0.1:50051 ticker.v1.Ticker/Watch
 ```
 
@@ -243,7 +267,7 @@ ERROR:
 and the server logs `watching ACME, UMBRELLA: cancelled, and its finalizer ran`.
 
 ```
-grpcurl -plaintext -proto proto/ticker.proto \
+grpcurl -plaintext -import-path . -proto ticker.proto \
   -d '{"symbol":"ACME","quantity":3,"limit":120.5} {"symbol":"ACME","quantity":-4,"limit":121}' \
   127.0.0.1:50051 ticker.v1.Ticker/Trade
 ```
@@ -258,14 +282,4 @@ grpcurl -plaintext -proto proto/ticker.proto \
 ERROR:
   Code: FailedPrecondition
   Message: you hold 3 ACME, so you can't sell 4
-```
-
-## Changing the proto
-
-`proto/src` is generated by `protoc-gen-purescript` from
-[yoga-protobuf](https://github.com/rowtype-yoga/purescript-yoga-protobuf):
-
-```
-protoc --plugin=protoc-gen-purescript=path/to/purescript-yoga-protobuf/bin/protoc-gen-purescript \
-  -I proto --purescript_out=module_prefix=Ticker.Proto:proto/src proto/ticker.proto
 ```
