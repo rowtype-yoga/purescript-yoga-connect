@@ -125,33 +125,18 @@ this way.
 
 ## Installing
 
-None of it is on the registry yet, so it all comes from GitHub. In your `spago.yaml`:
+It's all in the [Go package set](https://github.com/rowtype-yoga/purescript-go-package-sets), so your
+`spago.yaml` only needs the set and the packages:
 
 ```yaml
+package:
+  name: my-service
+  dependencies:
+    - yoga-connect-go
+    - yoga-strom-io
 workspace:
-  extraPackages:
-    yoga-connect:
-      git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
-      ref: v0.3.0
-      subdir: packages/yoga-connect
-    yoga-connect-go:
-      git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
-      ref: v0.3.0
-      subdir: packages/yoga-connect-go
-    yoga-strom-io:
-      git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
-      ref: v0.3.0
-      subdir: packages/yoga-strom-io
-    yoga-protobuf:
-      git: https://github.com/rowtype-yoga/purescript-yoga-protobuf.git
-      ref: v0.2.0
-    yoga-go-http-om:
-      git: https://github.com/rowtype-yoga/purescript-yoga-go-http-om.git
-      ref: v0.2.0
-    go-io:
-      git: https://github.com/i-am-the-slime/purescript-go.git
-      ref: v0.3.0
-      subdir: packages/go-io
+  packageSet:
+    url: https://raw.githubusercontent.com/rowtype-yoga/purescript-go-package-sets/go-0.1.18-20261126.6/packages.json
 ```
 
 You need googoo 0.1.18-go.5 or newer (`brew install spago i-am-the-slime/tap/googoo`) and Go 1.27.

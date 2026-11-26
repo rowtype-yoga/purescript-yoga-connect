@@ -21,17 +21,4 @@ package:
     - yoga-strom-io
 workspace:
   packageSet:
-    url: https://raw.githubusercontent.com/rowtype-yoga/purescript-go-package-sets/go-0.1.18-20261126.4/packages.json
-  extraPackages:
-    yoga-connect:
-      git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
-      ref: v0.3.0
-      subdir: packages/yoga-connect
-    yoga-connect-go:
-      git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
-      ref: v0.3.0
-      subdir: packages/yoga-connect-go
-    yoga-strom-io:
-      git: https://github.com/rowtype-yoga/purescript-yoga-connect.git
-      ref: v0.3.0
-      subdir: packages/yoga-strom-io
+    url: https://raw.githubusercontent.com/rowtype-yoga/purescript-go-package-sets/go-0.1.18-20261126.6/packages.json
